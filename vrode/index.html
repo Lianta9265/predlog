@@ -1,0 +1,1350 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Интерактивное видео — Платон</title>
+  <style>
+    :root{
+      --bg1:#070b1a;
+      --bg2:#141a33;
+      --card: rgba(255,255,255,.08);
+      --card2: rgba(255,255,255,.12);
+      --stroke: rgba(255,255,255,.18);
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.72);
+      --good: #3df08b;
+      --bad: #ff4d6d;
+      --warn: #ffd166;
+      --accent: #66d9ff;
+      --accent2:#b988ff;
+      --shadow: 0 18px 60px rgba(0,0,0,.45);
+      --radius: 18px;
+    }
+
+    *{ box-sizing:border-box; }
+    html, body{ height:100%; }
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(1200px 700px at 20% 0%, rgba(102,217,255,.32), transparent 55%),
+        radial-gradient(900px 600px at 90% 10%, rgba(185,136,255,.30), transparent 55%),
+        radial-gradient(900px 700px at 60% 100%, rgba(61,240,139,.22), transparent 55%),
+        linear-gradient(180deg, var(--bg1), var(--bg2));
+      overflow:hidden;
+    }
+
+    .stars::before,
+    .stars::after{
+      content:"";
+      position:absolute;
+      inset:-40px;
+      background-image:
+        radial-gradient(1px 1px at 20px 30px, rgba(255,255,255,.45), transparent 55%),
+        radial-gradient(1px 1px at 140px 90px, rgba(255,255,255,.35), transparent 55%),
+        radial-gradient(1px 1px at 280px 160px, rgba(255,255,255,.30), transparent 55%),
+        radial-gradient(1px 1px at 420px 40px, rgba(255,255,255,.28), transparent 55%),
+        radial-gradient(1px 1px at 560px 120px, rgba(255,255,255,.26), transparent 55%),
+        radial-gradient(1px 1px at 700px 200px, rgba(255,255,255,.32), transparent 55%),
+        radial-gradient(1px 1px at 840px 80px, rgba(255,255,255,.22), transparent 55%),
+        radial-gradient(1px 1px at 980px 170px, rgba(255,255,255,.24), transparent 55%);
+      opacity:.55;
+      pointer-events:none;
+      filter: blur(.2px);
+      transform: translateZ(0);
+    }
+    .stars::after{ opacity:.35; transform: scale(1.1); }
+
+    .app{
+      position:relative;
+      height:100%;
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+      padding:16px;
+    }
+
+    header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .brand{
+      display:flex;
+      align-items:baseline;
+      gap:10px;
+      user-select:none;
+    }
+    .brand .title{
+      font-weight:800;
+      letter-spacing:.2px;
+      font-size:16px;
+      opacity:.95;
+    }
+    .brand .badge{
+      font-size:12px;
+      color: var(--muted);
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.12);
+      padding:6px 10px;
+      border-radius:999px;
+    }
+
+    .controls{
+      display:flex;
+      gap:10px;
+      align-items:center;
+    }
+
+    button{
+      appearance:none;
+      border:none;
+      cursor:pointer;
+      color: var(--text);
+      background: rgba(255,255,255,.10);
+      border: 1px solid rgba(255,255,255,.16);
+      padding:10px 14px;
+      border-radius: 14px;
+      font-weight:700;
+      letter-spacing:.3px;
+      box-shadow: 0 10px 25px rgba(0,0,0,.25);
+      transition: transform .12s ease, background .12s ease, border-color .12s ease, opacity .12s ease;
+      user-select:none;
+      white-space:nowrap;
+    }
+    button:hover{ transform: translateY(-1px); background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.22); }
+    button:active{ transform: translateY(0px) scale(.99); }
+    button[disabled]{ opacity:.45; cursor:not-allowed; transform:none; }
+
+    .btn-primary{
+      background: linear-gradient(135deg, rgba(102,217,255,.25), rgba(185,136,255,.20));
+      border-color: rgba(102,217,255,.28);
+    }
+    .btn-primary:hover{ background: linear-gradient(135deg, rgba(102,217,255,.33), rgba(185,136,255,.26)); }
+
+    .btn-warn{
+      background: rgba(255,209,102,.16);
+      border-color: rgba(255, 209, 102, 0.695);
+    }
+
+    .pulse{
+      animation: pulse 1.05s ease-in-out infinite;
+      box-shadow: 0 0 0 0 rgba(255,209,102,.35), 0 12px 28px rgba(0,0,0,.25);
+    }
+    @keyframes pulse{
+      0%{ box-shadow: 0 0 0 0 rgba(255,209,102,.38), 0 12px 28px rgba(0,0,0,.25); }
+      70%{ box-shadow: 0 0 0 10px rgba(255,209,102,0), 0 12px 28px rgba(0,0,0,.25); }
+      100%{ box-shadow: 0 0 0 0 rgba(255,209,102,0), 0 12px 28px rgba(0,0,0,.25); }
+    }
+
+    .stage{
+      flex:1;
+      min-height:0;
+      display:grid;
+      grid-template-columns: 1.35fr .9fr;
+      gap:14px;
+    }
+
+    .panel{
+      background: var(--card);
+      border: 1px solid var(--stroke);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+      overflow:hidden;
+      position:relative;
+      min-height:0;
+    }
+
+    .screen{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      height:100%;
+      min-height:0;
+      padding:14px;
+    }
+
+    .media-wrap{
+      width:100%;
+      height:100%;
+      min-height:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    video, img{
+      width:100%;
+      height:100%;
+      object-fit: contain;
+      border-radius: 14px;
+      background: rgba(0,0,0,.22);
+      border: 1px solid rgba(255,255,255,.10);
+    }
+
+    .right{
+      display:flex;
+      flex-direction:column;
+      min-height:0;
+    }
+
+    .card{
+      padding:14px;
+      border-bottom: 1px solid rgba(255,255,255,.10);
+      background: rgba(255,255,255,.04);
+    }
+
+    .card h2{
+      margin:0 0 6px 0;
+      font-size:16px;
+      letter-spacing:.2px;
+    }
+
+    .card p{ margin:0; color:var(--muted); font-size:13px; line-height:1.35; }
+
+    .task{
+      padding:14px;
+      overflow:auto;
+      min-height:0;
+    }
+
+    .task-title{
+      font-weight:800;
+      margin:0 0 10px 0;
+      font-size:14px;
+    }
+
+    .q{
+      margin:0 0 10px 0;
+      font-size:14px;
+      line-height:1.35;
+    }
+
+    .options{ display:flex; flex-direction:column; gap:10px; margin: 10px 0 12px 0; }
+
+    .opt{
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      padding:10px 10px;
+      border-radius: 14px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.12);
+      transition: background .12s ease, border-color .12s ease;
+    }
+    .opt:hover{ background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.18); }
+
+    .opt input{ margin-top:2px; }
+
+    .row{ display:flex; gap:10px; flex-wrap:wrap; }
+
+    .mini{
+      font-size:12px;
+      color: var(--muted);
+      margin-top:8px;
+    }
+
+    .msg{
+      margin-top:12px;
+      padding:10px 12px;
+      border-radius: 14px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.12);
+      font-weight:700;
+      display:none;
+    }
+
+    .msg.good{ display:block; border-color: rgba(61,240,139,.35); background: rgba(61,240,139,.10); }
+    .msg.bad{ display:block; border-color: rgba(255,77,109,.38); background: rgba(255,77,109,.10); }
+
+    .hint{
+      margin-top:12px;
+      padding:10px 12px;
+      border-radius: 14px;
+      background: rgba(102,217,255,.10);
+      border: 1px solid rgba(102,217,255,.25);
+      color: rgba(255,255,255,.92);
+      font-size: 13px;
+      display:none;
+    }
+
+    .footer-note{
+      margin-top:auto;
+      padding:10px 14px;
+      border-top: 1px solid rgba(255,255,255,.10);
+      color: rgba(255,255,255,.60);
+      font-size: 12px;
+    }
+
+    .hidden{ display:none !important; }
+
+    /* Выпадающие списки */
+    select.inline-select{
+      appearance:none;
+      background: rgba(255,255,255,.10);
+      border: 1px solid rgba(255,255,255,.18);
+      color: var(--text);
+      padding:8px 10px;
+      border-radius: 12px;
+      font-weight:800;
+      letter-spacing:.2px;
+      outline:none;
+      box-shadow: 0 10px 25px rgba(0,0,0,.18);
+      margin: 0 6px;
+    }
+    select.inline-select:focus{
+      border-color: rgba(102, 217, 255, 0.64);
+      box-shadow: 0 0 0 4px rgba(102,217,255,.10), 0 10px 25px rgba(0,0,0,.18);
+    }
+    option{ color:#111; }
+
+    @media (max-width: 980px){
+      .stage{ grid-template-columns: 1fr; }
+      .right{ order:-1; }
+    }
+  
+
+    /* =========================
+       COSMIC UPGRADE (safe)
+       Adds: nebula haze, soft grain, holographic borders, glow feedback.
+       Does NOT change layout/IDs/JS logic.
+       ========================= */
+
+    /* Background layers: nebula + subtle grain + orbit rings */
+    body::before{
+      content:"";
+      position: fixed;
+      inset: -20px;
+      background:
+        radial-gradient(1100px 700px at 15% 5%, rgba(102, 217, 255, 0.712), transparent 60%),
+        radial-gradient(900px 650px at 85% 15%, rgba(231, 136, 255, 0.618), transparent 62%),
+        radial-gradient(1000px 750px at 55% 105%, rgba(61, 240, 139, 0.638), transparent 60%),
+        radial-gradient(700px 500px at 40% 55%, rgba(255, 209, 102, 0.719), transparent 55%);
+      pointer-events:none;
+      z-index: -2;
+      filter: saturate(1.1);
+    }
+
+    /* Soft grain (CSS-only, tiny and subtle) */
+    body::after{
+      content:"";
+      position: fixed;
+      inset: 0;
+      pointer-events:none;
+      z-index: -1;
+      opacity: .10;
+      background-image:
+        radial-gradient(1px 1px at 12% 18%, rgba(255,255,255,.35), transparent 55%),
+        radial-gradient(1px 1px at 28% 72%, rgba(255,255,255,.25), transparent 55%),
+        radial-gradient(1px 1px at 63% 36%, rgba(255,255,255,.25), transparent 55%),
+        radial-gradient(1px 1px at 78% 82%, rgba(255,255,255,.22), transparent 55%),
+        radial-gradient(1px 1px at 90% 44%, rgba(255,255,255,.18), transparent 55%);
+      mix-blend-mode: screen;
+    }
+
+    /* Make the star layer feel more "station-like" with faint rings */
+    .stars{
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events:none;
+    }
+    .stars::before,
+    .stars::after{
+      /* keep your existing stars, plus add faint orbit arcs */
+      background-image:
+        radial-gradient(1px 1px at 20px 30px, rgba(255,255,255,.45), transparent 55%),
+        radial-gradient(1px 1px at 140px 90px, rgba(255,255,255,.35), transparent 55%),
+        radial-gradient(1px 1px at 280px 160px, rgba(255,255,255,.30), transparent 55%),
+        radial-gradient(1px 1px at 420px 40px, rgba(255,255,255,.28), transparent 55%),
+        radial-gradient(1px 1px at 560px 120px, rgba(255,255,255,.26), transparent 55%),
+        radial-gradient(1px 1px at 700px 200px, rgba(255,255,255,.32), transparent 55%),
+        radial-gradient(1px 1px at 840px 80px, rgba(255,255,255,.22), transparent 55%),
+        radial-gradient(1px 1px at 980px 170px, rgba(255,255,255,.24), transparent 55%),
+        radial-gradient(900px 900px at 15% 85%, rgba(102,217,255,.08), transparent 55%),
+        radial-gradient(800px 800px at 80% 25%, rgba(185,136,255,.08), transparent 55%);
+    }
+
+    /* Holographic panels: richer glass + subtle inner glow */
+    .panel{
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.05));
+      border: 1px solid rgba(255,255,255,.22);
+      box-shadow:
+        inset 0 0 26px rgba(255,255,255,.07),
+        0 18px 60px rgba(0,0,0,.45),
+        0 0 40px rgba(102,217,255,.12);
+    }
+    /* Nice "edge highlight" without extra elements */
+    .panel::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      border-radius: inherit;
+      pointer-events:none;
+      background:
+        radial-gradient(900px 200px at 20% 0%, rgba(102,217,255,.18), transparent 60%),
+        radial-gradient(700px 240px at 90% 10%, rgba(185,136,255,.14), transparent 60%);
+      opacity:.35;
+      mix-blend-mode: screen;
+    }
+
+    /* Buttons: more neon clarity, but same sizing */
+    button{
+      background:
+        linear-gradient(135deg, rgba(255,255,255,.12), rgba(255,255,255,.08));
+      border: 1px solid rgba(255,255,255,.22);
+      box-shadow:
+        0 12px 28px rgba(0,0,0,.28),
+        0 0 22px rgba(102,217,255,.10);
+      text-shadow: 0 1px 0 rgba(0,0,0,.25);
+    }
+    .btn-primary{
+      background: linear-gradient(135deg, rgba(102,217,255,.32), rgba(185,136,255,.22));
+      border-color: rgba(102,217,255,.38);
+      box-shadow:
+        0 14px 30px rgba(0,0,0,.28),
+        0 0 28px rgba(102,217,255,.28);
+    }
+    .btn-primary:hover{
+      background: linear-gradient(135deg, rgba(102,217,255,.40), rgba(185,136,255,.28));
+      box-shadow:
+        0 16px 34px rgba(0,0,0,.30),
+        0 0 34px rgba(102,217,255,.32);
+    }
+    .btn-warn{
+      background: linear-gradient(135deg, rgba(255,209,102,.22), rgba(255,255,255,.08));
+      border-color: rgba(110, 255, 102, 0.45);
+      box-shadow:
+        0 14px 30px rgba(0,0,0,.28),
+        0 0 26px rgba(255,209,102,.20);
+    }
+
+    /* Options look like mini glass capsules */
+    .opt{
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05));
+      border: 1px solid rgba(255,255,255,.16);
+      box-shadow:
+        inset 0 0 16px rgba(255,255,255,.05),
+        0 10px 22px rgba(0,0,0,.20);
+    }
+    .opt:hover{
+      border-color: rgba(255,255,255,.22);
+      box-shadow:
+        inset 0 0 18px rgba(255,255,255,.07),
+        0 12px 26px rgba(0,0,0,.22),
+        0 0 22px rgba(102,217,255,.10);
+    }
+
+    /* Task appearance micro-animation (safe) */
+    .task{
+      animation: taskAppear .32s ease;
+    }
+    @keyframes taskAppear{
+      from{ opacity: 0; transform: translateY(6px) scale(.985); }
+      to{ opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* Feedback messages: neon glow, readable */
+    .msg.good{
+      border-color: rgba(61,240,139,.55);
+      background: linear-gradient(135deg, rgba(61,240,139,.16), rgba(102,217,255,.10));
+      box-shadow:
+        0 0 28px rgba(61, 240, 139, 0.497),
+        inset 0 0 18px rgba(255,255,255,.08);
+      animation: successPulse 1.05s ease;
+    }
+    @keyframes successPulse{
+      0%{ box-shadow: 0 0 0 rgba(61,240,139,0), inset 0 0 18px rgba(255,255,255,.08); }
+      60%{ box-shadow: 0 0 34px rgba(61,240,139,.32), inset 0 0 18px rgba(255,255,255,.10); }
+      100%{ box-shadow: 0 0 28px rgba(61,240,139,.26), inset 0 0 18px rgba(255,255,255,.08); }
+    }
+    .msg.bad{
+      border-color: rgba(255,77,109,.55);
+      background: linear-gradient(135deg, rgba(255,77,109,.16), rgba(185,136,255,.10));
+      box-shadow:
+        0 0 30px rgba(255,77,109,.22),
+        inset 0 0 18px rgba(255,255,255,.07);
+    }
+
+    /* Holographic select (Task 5): clearer and more "module-like" */
+    select.inline-select{
+      background: linear-gradient(135deg, rgba(102,217,255,.18), rgba(185,136,255,.14));
+      border-color: rgba(255,255,255,.28);
+      box-shadow:
+        0 12px 26px rgba(0,0,0,.22),
+        0 0 26px rgba(102,217,255,.18),
+        inset 0 0 12px rgba(255,255,255,.10);
+    }
+    select.inline-select:hover{
+      border-color: rgba(102,217,255,.42);
+    }
+    select.inline-select:focus{
+      border-color: rgba(102,217,255,.55);
+      box-shadow:
+        0 0 0 4px rgba(102,217,255,.12),
+        0 12px 26px rgba(0,0,0,.22),
+        0 0 34px rgba(102,217,255,.26),
+        inset 0 0 14px rgba(255,255,255,.12);
+    }
+
+    /* Slightly crisper heading contrast */
+    .card{
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+    }
+
+    /* Make media frame feel like a docking window */
+    video, img{
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,.08),
+        0 0 30px rgba(102,217,255,.10);
+    }
+
+    /* ===== : увеличить межстрочный интервал ===== */
+    #task5 .q{
+      line-height: 2;          /* вдвое больше */
+    }
+    #task5 .q b,
+    #task5 .q select{
+      display: inline-block;
+      margin: 8px 6px;         /* вертикальный «воздух» */
+    }
+    #task5 select.inline-select{
+      margin-top: 6px;
+      margin-bottom: 6px;
+    }
+
+
+    /* ===== ЦВЕТНЫЕ КОСМИЧЕСКИЕ РАМКИ ===== */
+
+    /* Общая неоновая рамка */
+    .panel{
+      position: relative;
+    }
+
+    /* СИНЯЯ рамка — основной режим */
+    .panel::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      border-radius: inherit;
+      pointer-events:none;
+      box-shadow:
+        inset 0 0 0 1px rgba(102, 217, 255, 0.608),
+        inset 0 0 18px rgba(222, 102, 255, 0.596),
+        0 0 28px rgba(102, 217, 255, 0.485);
+      mix-blend-mode: screen;
+    }
+
+    /* ЗЕЛЁНАЯ рамка — успех */
+    .msg.good{
+      position: relative;
+    }
+    .msg.good::after{
+      content:"";
+      position:absolute;
+      inset:-3px;
+      border-radius: inherit;
+      pointer-events:none;
+      box-shadow:
+        inset 0 0 0 1px rgba(61,240,139,.6),
+        inset 0 0 20px rgba(61,240,139,.35),
+        0 0 36px rgba(61,240,139,.45);
+    }
+
+    /* СИНЯЯ рамка — выпадающие списки */
+    select.inline-select{
+      position: relative;
+    }
+
+    /* ЗЕЛЁНОЕ свечение при фокусе */
+    select.inline-select:focus{
+      box-shadow:
+        0 0 0 3px rgba(61,240,139,.18),
+        0 0 28px rgba(61,240,139,.55),
+        inset 0 0 14px rgba(255,255,255,.15);
+    }
+
+    /* Мягкая анимация пульса рамок */
+    @keyframes glowPulse{
+      0%{opacity:.6}
+      50%{opacity:1}
+      100%{opacity:.6}
+    }
+
+    .panel::after{
+      animation: glowPulse 4s ease-in-out infinite;
+    }
+
+
+    /* ===== СЛУЖЕБНАЯ ПОДСКАЗКА ПРО ФАЙЛЫ (не для учеников) ===== */
+    .dev-note{ display:none; }
+    body.dev .dev-note{ display:block; }
+
+
+    /* ===== СКРЫТИЕ СЛУЖЕБНЫХ ПОДСКАЗОК ДЛЯ УЧЕНИКОВ ===== */
+    .mini.answer-hint,
+    .answer-hint{
+      display:none !important;
+    }
+
+    /* ===== СКРЫТЬ НУМЕРА ЗАДАНИЙ (нелинейный квест) ===== */
+    .task-title,
+    .task-title *{
+      display:none !important;
+    }
+
+
+    /* ===== ПОЛНОЕ СКРЫТИЕ ЛЮБЫХ ОТВЕТОВ-ПОДСКАЗОК ===== */
+    .answer-hint,
+    .correct-answer,
+    .right-answer,
+    .mini,
+    .mini *{
+      display:none !important;
+      visibility:hidden !important;
+      height:0 !important;
+      margin:0 !important;
+      padding:0 !important;
+    }
+
+
+    /* ===== УВЕЛИЧЕНИЕ ШРИФТА x1.2 (БЕЗ ЛОГИКИ) ===== */
+    html{
+      font-size: 120%;
+    }
+
+    /* Чуть компенсируем кнопки, чтобы не «распухли» */
+    button{
+      font-size: 0.95em;
+    }
+
+
+    /* ===== СКРЫТЬ СЛУЖЕБНЫЙ СОВЕТ ПРО СТАРТ ВИДЕО ===== */
+    .start-hint,
+    .hint,
+    .video-hint{
+      display:none !important;
+    }
+
+    /* ===== УВЕЛИЧИТЬ ШРИФТ ВОПРОСОВ x1.3 ===== */
+    .question,
+    .q,
+    .task-text,
+    .task-description,
+    .panel-right h3 + p{
+      font-size: 1.3em;
+      line-height: 1.6;
+    }
+
+
+    /* ===== TASK 6: кликабельный текст ===== */
+    #task6 .q{
+      line-height: 1.8;
+    }
+    .token{
+      display:inline-block;
+      padding: 2px 8px;
+      margin: 1px 2px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.06);
+      cursor: pointer;
+      user-select:none;
+      font-weight: 900;
+      letter-spacing: .2px;
+      transition: transform .08s ease, box-shadow .12s ease, background .12s ease, border-color .12s ease;
+    }
+    .token:hover{ transform: translateY(-1px); border-color: rgba(102,217,255,.35); box-shadow: 0 0 18px rgba(102,217,255,.14); }
+    .token.selected{
+      border-color: rgba(102,217,255,.55);
+      background: rgba(102,217,255,.10);
+      box-shadow: 0 0 22px rgba(102,217,255,.16);
+    }
+    .token.selected.good{
+      border-color: rgba(61,240,139,.70);
+      background: rgba(61,240,139,.14);
+      box-shadow: 0 0 22px rgba(61,240,139,.22);
+    }
+    .token.selected.bad{
+      border-color: rgba(255,77,109,.70);
+      background: rgba(255,77,109,.14);
+      box-shadow: 0 0 22px rgba(255,77,109,.18);
+    }
+
+</style>
+</head>
+<body>
+  <div class="stars"></div>
+  <div class="app">
+    <header>
+      <div class="brand">
+        <div class="title">Платон ищет предлог</div>
+        <div class="badge" id="statusBadge">Готово к старту</div>
+      </div>
+      <div class="controls">
+        <button class="btn-primary" id="btnStart">СТАРТ</button>
+        <button class="btn-warn" id="btnContinue" disabled>ПРОДОЛЖИТЬ</button>
+      </div>
+    </header>
+
+    <main class="stage">
+      <section class="panel" aria-label="Экран">
+        <div class="screen">
+          <div class="media-wrap">
+            <video id="player" class="hidden" playsinline preload="metadata"></video>
+            <img id="picture" class="hidden" alt="Кадр" />
+            <div id="welcome" style="max-width:720px; text-align:center; padding:26px;">
+              <div style="font-weight:900; font-size:22px; letter-spacing:.2px;">Интерактивное видео</div>
+              <div style="margin-top:10px; color:var(--muted); line-height:1.45;">
+                Нажми <b>СТАРТ</b> — смотри, что произошло с Платоном. Выполняй задания.
+                <br />Если ошибёшься, повтори правило и нажми <b>ПРОДОЛЖИТЬ</b>.
+              </div>
+              <div class="mini dev-note" style="margin-top:12px;">
+                Файлы должны лежать рядом с <b>index.html</b> и называться точно так:
+                <b>video.mp4</b>, <b>video1.mp4</b>, <b>video2.mp4</b>, <b>video3.mp4</b>, <b>video4.mp4</b>, <b>rule.png</b>, <b>rule2.png</b>, <b>rule3.png</b>.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="panel right" aria-label="Задания">
+        <div class="card">
+          <h2 id="panelTitle">Панель заданий</h2>
+          <p id="panelDesc">Здесь будут появляться задания. Жми «СТАРТ».</p>
+        </div>
+
+        <!-- TASK 1 -->
+        <div class="task hidden" id="task1">
+          <div class="task-title"> ·</div>
+          <p class="q">Платон подал сигнал SOS: «Я запутался в чём-то <b>  (в)роде</b> созвездия-сетки». Что он имел в виду?</p>
+          <div class="options">
+            <label class="opt"><input type="radio" name="t1" value="prep"> <span><b>предлог</b> <i>вроде</i> (≈ «наподобие»)</span></label>
+            <label class="opt"><input type="radio" name="t1" value="noun"> <span><b>существительное</b> «род» + предлог <i>"в"</i> (в чём? — в роде)</span></label>
+          </div>
+          <div class="row">
+            <button id="t1Check">ПРОВЕРИТЬ</button>
+            <button id="t1HintBtn">ПОДСКАЗКА</button>
+          </div>
+          <div class="hint" id="t1Hint">Подсказка: если это предлог, к слову после него задаём вопрос <b>от предлога</b>: «вроде (чего?) созвездия». Если «в роде», вопрос задаётся к слову «род»: «в (чём?) роде».</div>
+          <div class="msg" id="t1Msg"></div>
+        </div>
+
+        <!-- TASK 2 (резерв после ошибки в 1) -->
+        <div class="task hidden" id="task2">
+          <div class="task-title"> · Доп. проработка</div>
+          <p class="q">Выбери все предложения, где <b>вроде</b> — это <b>предлог</b> (≈ «наподобие», «типа» ).</p>
+          <div class="options" id="t2Options">
+            <label class="opt"><input type="checkbox" value="1"> <span>Он в компании был кем-то <b>(в)роде</b> героя комикса.</span></label>
+            <label class="opt"><input type="checkbox" value="2"> <span>Эти особи <b>(в)роде</b> своём уникальны.</span></label>
+            <label class="opt"><input type="checkbox" value="3"> <span>Появилось нечто <b>(в)роде</b> карты созвездий.</span></label>
+            <label class="opt"><input type="checkbox" value="4"> <span>(В)роде межгалактических бабуинов<b>встречаются</b>гиганты.</span></label>
+          </div>
+          <div class="row">
+            <button id="t2Check">ПРОВЕРИТЬ</button>
+          </div>
+          <div class="msg" id="t2Msg"></div>
+          <div class="mini"><span class="answer-hint">Правильный набор:</span> </div>
+        </div>
+
+        <!-- TASK 3 -->
+        <div class="task hidden" id="task3">
+          <div class="task-title"> ·</div>
+          <p class="q">Как  воспринял  слово (В)РОДЕ <b>робот-диспетчер</b>?</p>
+          <div class="options">
+            <label class="opt"><input type="radio" name="t3" value="a"> <span>Как предлог <b>вроде.</span></label>
+            <label class="opt"><input type="radio" name="t3" value="b"> <span>Как существительное с предлогом.</span></label>
+          </div>
+          <div class="row">
+            <button id="t3Check">ПРОВЕРИТЬ</button>
+            <button id="t3HintBtn">ПОДСКАЗКА</button>
+          </div>
+          <div class="hint" id="t3Hint">Если можно заменить на «типа / наподобие», то это предлог.</div>
+          <div class="msg" id="t3Msg"></div>
+        </div>
+
+        <!-- TASK 5 (основное после video2) -->
+        <div class="task hidden" id="task5">
+          <div class="task-title"> · «Диспетчер-чайник»</div>
+          <p class="q">
+            Платон о диспетчере, который плохо знает русский язык:
+            <br><br>
+            <b>"Поколение мониторов-неучей! (В)роде</b>
+            <select class="inline-select" id="t5Sel1">
+              <option value="">— выбери —</option>
+              <option value="prep">предлог, слитно</option>
+              <option value="noun">сущ. с предлогом, раздельно</option>
+            </select>
+            <b>которых</b> одни чайники
+            <b>(в)роде</b>
+            <select class="inline-select" id="t5Sel2">
+              <option value="">— выбери —</option>
+              <option value="prep">предлог, слитно</option>
+              <option value="noun">сущ. с предлогом, раздельно</option>
+            </select>
+            <b>этого"</b>.
+          </p>
+          <div class="row">
+            <button id="t5Check">ПРОВЕРИТЬ</button>
+          </div>
+          <div class="msg" id="t5Msg"></div>
+        </div>
+
+        <!-- TASK 4 (резерв после ошибки в 5) -->
+        <div class="task hidden" id="task4">
+          <div class="task-title"> · Доп. проработка (если в 5 ошибся)</div>
+          <p class="q"><b>Отметь только</b> те примеры, где написано <b>в роде</b> (сущ.+пр.).</p>
+          <div class="options" id="t4Options">
+            <label class="opt"><input type="checkbox" value="prep1"> <span>Это было сооружение <b>(в)роде</b> ловушки.</span></label>
+            <label class="opt"><input type="checkbox" value="noun1"> <span>Платон  хорошо разбирается <b>(в)роде</b> космических аббревиатур.</span></label>
+            <label class="opt"><input type="checkbox" value="prep2"> <span>Неучей <b>(в)роде вас нельзя</b> допускать к управлению полетом.</span></label>
+            <label class="opt"><input type="checkbox" value="noun2"> <span>(в)роде, числе, падеже) <b>изменяются</b> не существительные, а прилагательные.</span></label>
+          </div>
+          <div class="row">
+            <button id="t4Check">ПРОВЕРИТЬ</button>
+          </div>
+          <div class="msg" id="t4Msg"></div>
+          <div class="mini"><span class="answer-hint">Правильный набор:</span> noun1 и noun2.</div>
+        </div>
+
+
+        <!-- TASK 6 (резерв после ошибки в 5) -->
+        <div class="task hidden" id="task6">
+          <div class="task-title"> · Доп. проработка (если в 5 ошибся)</div>
+          <p class="q">
+            Платон — самый грамотный <span class="token" data-correct="0">(в)роде</span> попугаев-космонавтов — показал нам, как важно разбираться не только
+            <span class="token" data-correct="0">(в)роде</span>, числе и падеже главных слов, но и в правописании служебных
+            <span class="token" data-correct="1">(в)роде</span> предлогов.
+            Это был наглядный урок или что-то
+            <span class="token" data-correct="1">(в)роде</span> того.
+          </p>
+          <div class="row">
+            <button id="t6Check">ПРОВЕРИТЬ</button>
+          </div>
+          <div class="msg" id="t6Msg"></div>
+        </div>
+
+        <div class="footer-note" id="footerNote"></div>
+      </aside>
+    </main>
+  </div>
+
+  
+  <script>
+    const INTRO = 'video.mp4';
+    const AFTER_T1 = 'video1.mp4';
+    const VIDEO2 = 'video2.mp4';
+    const VIDEO4 = 'video4.mp4';
+
+    const RULE1_IMG = 'rule.png';
+    const RULE2_IMG = 'rule2.png';
+    const RULE3_IMG = 'rule3.png';
+
+    const FINAL = 'video3.mp4';
+
+    const ST = {
+      IDLE: 'IDLE',
+      INTRO_VIDEO: 'INTRO_VIDEO',
+
+      TASK1: 'TASK1',
+      RULE1: 'RULE1',
+      TASK2: 'TASK2',
+      VIDEO4: 'VIDEO4',   // после задания 2, затем снова задание 1
+      VIDEO1: 'VIDEO1',
+
+      TASK3: 'TASK3',
+      RULE2: 'RULE2',
+      TASK4: 'TASK4',
+
+      VIDEO2: 'VIDEO2',
+      TASK5: 'TASK5',
+
+      RULE3: 'RULE3',
+      TASK6: 'TASK6',
+
+      FINAL: 'FINAL'
+    };
+
+    let state = ST.IDLE;
+    let t6HadError = false;
+
+    const btnStart = document.getElementById('btnStart');
+    const btnContinue = document.getElementById('btnContinue');
+    const statusBadge = document.getElementById('statusBadge');
+
+    const player = document.getElementById('player');
+    const picture = document.getElementById('picture');
+    const welcome = document.getElementById('welcome');
+
+    const panelTitle = document.getElementById('panelTitle');
+    const panelDesc = document.getElementById('panelDesc');
+
+    const task1 = document.getElementById('task1');
+    const task2 = document.getElementById('task2');
+    const task3 = document.getElementById('task3');
+    const task4 = document.getElementById('task4');
+    const task5 = document.getElementById('task5');
+    const task6 = document.getElementById('task6');
+
+    const t1Check = document.getElementById('t1Check');
+    const t1HintBtn = document.getElementById('t1HintBtn');
+    const t1Hint = document.getElementById('t1Hint');
+    const t1Msg = document.getElementById('t1Msg');
+
+    const t2Check = document.getElementById('t2Check');
+    const t2Msg = document.getElementById('t2Msg');
+
+    const t3Check = document.getElementById('t3Check');
+    const t3HintBtn = document.getElementById('t3HintBtn');
+    const t3Hint = document.getElementById('t3Hint');
+    const t3Msg = document.getElementById('t3Msg');
+
+    const t4Check = document.getElementById('t4Check');
+    const t4Msg = document.getElementById('t4Msg');
+
+    const t5Sel1 = document.getElementById('t5Sel1');
+    const t5Sel2 = document.getElementById('t5Sel2');
+    const t5Check = document.getElementById('t5Check');
+    const t5Msg = document.getElementById('t5Msg');
+
+    const t6Check = document.getElementById('t6Check');
+    const t6Msg = document.getElementById('t6Msg');
+    const t6Tokens = [...document.querySelectorAll('#task6 .token')];
+
+    function setBadge(text){ statusBadge.textContent = text; }
+
+    function enableContinuePulse(on){
+      if(on){
+        btnContinue.disabled = false;
+        btnContinue.classList.add('pulse');
+      } else {
+        btnContinue.disabled = true;
+        btnContinue.classList.remove('pulse');
+      }
+    }
+
+    function showOnlyTask(el){
+      [task1, task2, task3, task4, task5, task6].forEach(t => t.classList.add('hidden'));
+      if(el) el.classList.remove('hidden');
+    }
+
+    function clearMsgs(){
+      [t1Msg,t2Msg,t3Msg,t4Msg,t5Msg,t6Msg].forEach(m => { m.className = 'msg'; m.textContent=''; });
+    }
+
+    function hideMedia(){
+      player.pause();
+      player.classList.add('hidden');
+      picture.classList.add('hidden');
+      welcome.classList.add('hidden');
+    }
+
+    function showWelcome(){
+      hideMedia();
+      welcome.classList.remove('hidden');
+    }
+
+    async function playVideo(filename){
+      hideMedia();
+      player.classList.remove('hidden');
+      player.src = filename;
+      player.load();
+      try{ await player.play(); } catch(e){ console.warn('Autoplay blocked:', e); }
+    }
+
+    function showImage(filename, alt='Картинка'){
+      hideMedia();
+      picture.classList.remove('hidden');
+      picture.alt = alt;
+      picture.src = filename;
+    }
+
+    function showFinalVideo(filename){
+      hideMedia();
+      player.classList.remove('hidden');
+      player.src = filename;
+      player.load();
+      player.muted = true;
+      player.playsInline = true;
+      const p = player.play();
+      if(p && typeof p.catch === 'function') p.catch(()=>{});
+    }
+
+    function resetToIdle(){
+      state = ST.IDLE;
+      btnStart.disabled = false;
+      enableContinuePulse(false);
+      setBadge('Готово к старту');
+      panelTitle.textContent = 'Панель заданий';
+      panelDesc.textContent = 'Нажми «СТАРТ». После видео появится первое задание.';
+      showOnlyTask(null);
+      clearMsgs();
+      t1Hint.style.display = 'none';
+      t3Hint.style.display = 'none';
+
+      document.querySelectorAll('input[name="t1"]').forEach(i=> i.checked=false);
+      document.querySelectorAll('#t2Options input[type="checkbox"]').forEach(i=> i.checked=false);
+      document.querySelectorAll('input[name="t3"]').forEach(i=> i.checked=false);
+      document.querySelectorAll('#t4Options input[type="checkbox"]').forEach(i=> i.checked=false);
+      t5Sel1.value = '';
+      t5Sel2.value = '';
+
+      // task6 tokens
+      t6Tokens.forEach(t=>{
+        t.classList.remove('selected','good','bad');
+        t.dataset.selected = '0';
+      });
+
+
+      t6HadError = false;
+
+      showWelcome();
+    }
+
+    function resetTask6UI(){
+      // Сброс кликов и подсветок задания 6 (чистое состояние)
+      t6Msg.className = 'msg';
+      t6Msg.textContent = '';
+      t6Tokens.forEach(t=>{
+        t.dataset.selected = '0';
+        t.classList.remove('selected','good','bad');
+      });
+    }
+
+    function go(next){
+      clearMsgs();
+      t1Hint.style.display = 'none';
+      t3Hint.style.display = 'none';
+
+      state = next;
+      btnStart.disabled = true;
+      enableContinuePulse(false);
+
+      switch(next){
+        case ST.IDLE:
+          resetToIdle();
+          break;
+
+        case ST.INTRO_VIDEO:
+          setBadge('Видео: старт');
+          panelTitle.textContent = 'Смотри видео';
+          panelDesc.textContent = 'После окончания появится первое задание.';
+          showOnlyTask(null);
+          playVideo(INTRO);
+          break;
+
+        case ST.TASK1:
+          setBadge('');
+          panelTitle.textContent = '';
+          panelDesc.textContent = 'Выбери вариант и нажми «ПРОВЕРИТЬ».';
+          showOnlyTask(task1);
+          showWelcome();
+          break;
+
+        case ST.RULE1:
+          setBadge('Правило');
+          panelTitle.textContent = 'Ошибка — смотри правило';
+          panelDesc.textContent = 'Потом нажми «ПРОДОЛЖИТЬ» — будет резервное задание.';
+          showOnlyTask(null);
+          showImage(RULE1_IMG, 'Правило');
+          enableContinuePulse(true);
+          break;
+
+        case ST.TASK2:
+          setBadge('');
+          panelTitle.textContent = '';
+          panelDesc.textContent = 'Резервное задание после ошибки в задании 1.';
+          showOnlyTask(task2);
+          showWelcome();
+          break;
+
+        case ST.VIDEO4:
+          setBadge('Видео: перезапуск миссии');
+          panelTitle.textContent = 'Сюжет';
+          panelDesc.textContent = 'После видео снова будет задание 1.';
+          showOnlyTask(null);
+          playVideo(VIDEO4);
+          break;
+
+        case ST.VIDEO1:
+          setBadge('Видео: после задания 1');
+          panelTitle.textContent = 'Сюжет';
+          panelDesc.textContent = 'Смотри следующее видео.';
+          showOnlyTask(null);
+          playVideo(AFTER_T1);
+          break;
+
+        case ST.TASK3:
+          setBadge('');
+          panelTitle.textContent = '';
+          panelDesc.textContent = 'Выбери вариант и нажми «ПРОВЕРИТЬ».';
+          showOnlyTask(task3);
+          showWelcome();
+          break;
+
+        case ST.RULE2:
+          setBadge('Правило');
+          panelTitle.textContent = 'Ошибка — смотри правило';
+          panelDesc.textContent = 'Потом нажми «ПРОДОЛЖИТЬ» — будет резервное задание.';
+          showOnlyTask(null);
+          showImage(RULE2_IMG, 'Правило');
+          enableContinuePulse(true);
+          break;
+
+        case ST.TASK4:
+          setBadge('');
+          panelTitle.textContent = '';
+          panelDesc.textContent = 'Резервное задание после ошибки в задании 3.';
+          showOnlyTask(task4);
+          showWelcome();
+          break;
+
+        case ST.VIDEO2:
+          setBadge('Видео: продолжение');
+          panelTitle.textContent = 'Сюжет';
+          panelDesc.textContent = 'После видео появится следующее задание.';
+          showOnlyTask(null);
+          playVideo(VIDEO2);
+          break;
+
+        case ST.TASK5:
+          setBadge('');
+          panelTitle.textContent = '';
+          panelDesc.textContent = 'Выбери варианты в выпадающих списках и нажми «ПРОВЕРИТЬ».';
+          showOnlyTask(task5);
+          showWelcome();
+          break;
+
+        case ST.RULE3:
+          setBadge('Правило');
+          panelTitle.textContent = 'Ошибка — смотри правило';
+          panelDesc.textContent = 'Потом нажми «ПРОДОЛЖИТЬ» — появится резервное задание.';
+          showOnlyTask(null);
+          showImage(RULE3_IMG, 'Правило');
+          enableContinuePulse(true);
+          break;
+
+        case ST.TASK6:
+          setBadge('');
+          panelTitle.textContent = '';
+          panelDesc.textContent = 'Кликни по словам, где «вроде» — предлог. Затем нажми «ПРОВЕРИТЬ».';
+          resetTask6UI();
+          showOnlyTask(task6);
+          showWelcome();
+          break;
+
+        case ST.FINAL:
+          setBadge('Финал');
+          panelTitle.textContent = 'Связь восстановлена';
+          panelDesc.textContent = 'Миссия выполнена. Можно начать заново.';
+          showOnlyTask(null);
+          showFinalVideo(FINAL);
+          btnStart.disabled = false;
+          break;
+      }
+    }
+
+    // Верхние кнопки
+    btnStart.addEventListener('click', () => {
+      go(ST.INTRO_VIDEO);
+    });
+
+    btnContinue.addEventListener('click', () => {
+      if(state === ST.RULE1) go(ST.TASK2);
+      else if(state === ST.RULE2) go(ST.TASK4);
+      else if(state === ST.RULE3) go(ST.TASK6);
+    });
+
+    // Видео закончилось
+    player.addEventListener('ended', () => {
+      if(state === ST.INTRO_VIDEO) go(ST.TASK1);
+      else if(state === ST.VIDEO1) go(ST.TASK3);
+      else if(state === ST.VIDEO4) go(ST.TASK1);
+      else if(state === ST.VIDEO2) go(ST.TASK5);
+    });
+
+    // TASK 1
+    t1HintBtn.addEventListener('click', () => {
+      t1Hint.style.display = (t1Hint.style.display === 'none' || !t1Hint.style.display) ? 'block' : 'none';
+    });
+
+    t1Check.addEventListener('click', () => {
+      const sel = document.querySelector('input[name="t1"]:checked');
+      if(!sel){
+        t1Msg.className = 'msg bad';
+        t1Msg.textContent = 'Выбери вариант ответа 🙂';
+        return;
+      }
+
+      if(sel.value === 'prep'){
+        t1Msg.className = 'msg good';
+        t1Msg.textContent = 'Верно! «вроде» здесь — предлог.';
+        setTimeout(() => go(ST.VIDEO1), 450);
+      } else {
+        t1Msg.className = 'msg bad';
+        t1Msg.textContent = 'Пока нет. Смотри правило.';
+        setTimeout(() => go(ST.RULE1), 450);
+      }
+    });
+
+    // TASK 2 (резерв после ошибки в 1)
+    t2Check.addEventListener('click', () => {
+      const checked = [...document.querySelectorAll('#t2Options input[type="checkbox"]')]
+        .filter(i => i.checked)
+        .map(i => i.value);
+
+      const correct = ['1','3'];
+      const ok = checked.length === correct.length && checked.every(v => correct.includes(v));
+
+      if(ok){
+        t2Msg.className = 'msg good';
+        t2Msg.textContent = 'Отлично! Продолжаем сюжет 🙂';
+        setTimeout(() => go(ST.VIDEO4), 550);
+      } else {
+        t2Msg.className = 'msg bad';
+        t2Msg.textContent = 'Не совсем. Где «вроде» можно заменить на «подобно / типа»?';
+      }
+    });
+
+    // TASK 3
+    t3HintBtn.addEventListener('click', () => {
+      t3Hint.style.display = (t3Hint.style.display === 'none' || !t3Hint.style.display) ? 'block' : 'none';
+    });
+
+    t3Check.addEventListener('click', () => {
+      const sel = document.querySelector('input[name="t3"]:checked');
+      if(!sel){
+        t3Msg.className = 'msg bad';
+        t3Msg.textContent = 'Выбери вариант ответа 🙂';
+        return;
+      }
+
+      // По сюжету диспетчер понял как "в роде" (сущ. + предлог)
+      if(sel.value === 'b'){
+        t3Msg.className = 'msg good';
+        t3Msg.textContent = 'Верно! Диспетчер воспринял это как «в роде» (в чём?) — сущ.+предлог.';
+        setTimeout(() => go(ST.VIDEO2), 550);
+      } else {
+        t3Msg.className = 'msg bad';
+        t3Msg.textContent = 'Пока нет. Смотри правило.';
+        setTimeout(() => go(ST.RULE2), 450);
+      }
+    });
+
+    // TASK 4 (резерв после ошибки в 3): правильно выбрать noun1 и noun2, потом продолжить сюжет (video2)
+    t4Check.addEventListener('click', () => {
+      const checks = [...document.querySelectorAll('#t4Options input[type="checkbox"]')];
+      const picked = checks.filter(i => i.checked).map(i => i.value);
+
+      const correct = ['noun1','noun2'];
+      const ok = picked.length === correct.length && picked.every(v => correct.includes(v));
+
+      if(ok){
+        t4Msg.className = 'msg good';
+        t4Msg.textContent = 'Отлично! Продолжаем сюжет 🙂';
+        setTimeout(() => go(ST.VIDEO2), 550);
+      } else {
+        t4Msg.className = 'msg bad';
+        t4Msg.textContent = 'Почти! Отметь только те варианты, где написано «в роде» (сущ.+пр.).';
+      }
+    });
+
+    // TASK 5 (основное): 1-е noun, 2-е prep
+    t5Check.addEventListener('click', () => {
+      const a = t5Sel1.value;
+      const b = t5Sel2.value;
+
+      if(!a || !b){
+        t5Msg.className = 'msg bad';
+        t5Msg.textContent = 'Заполни оба выпадающих списка 🙂';
+        return;
+      }
+
+      const ok = (a === 'noun') && (b === 'prep');
+
+      if(ok){
+        t5Msg.className = 'msg good';
+        t5Msg.textContent = 'Супер! Диспетчер понял Платона 😄 Финал!';
+        setTimeout(() => go(ST.FINAL), 650);
+      } else {
+        t5Msg.className = 'msg bad';
+        t5Msg.textContent = 'Пока нет. Смотри правило — и будет резервное задание.';
+        setTimeout(() => go(ST.RULE3), 500);
+      }
+    });
+
+    // TASK 6 tokens: подсветка только после ПРОВЕРИТЬ
+    t6Tokens.forEach(tok=>{
+      tok.addEventListener('click', ()=>{
+        const selected = tok.dataset.selected === '1';
+
+        // При любом клике снимаем прошлую подсветку (если она уже была)
+        tok.classList.remove('good','bad');
+
+        if(selected){
+          tok.dataset.selected = '0';
+          tok.classList.remove('selected');
+          return;
+        }
+
+        tok.dataset.selected = '1';
+        tok.classList.add('selected');
+      });
+    });
+
+    t6Check.addEventListener('click', ()=>{
+      // Сначала очищаем подсветку
+      t6Tokens.forEach(t=> t.classList.remove('good','bad'));
+
+      const selectedTokens = t6Tokens.filter(t=> t.dataset.selected === '1');
+      const pickedCorrect = selectedTokens.filter(t=> t.dataset.correct === '1').length;
+      const pickedWrong = selectedTokens.filter(t=> t.dataset.correct === '0').length;
+      const totalCorrect = t6Tokens.filter(t=> t.dataset.correct === '1').length;
+
+      // Подсветка выбранных слов
+      selectedTokens.forEach(t=>{
+        if(t.dataset.correct === '1') t.classList.add('good');
+        else t.classList.add('bad');
+      });
+
+      const ok = (pickedCorrect === totalCorrect) && (pickedWrong === 0);
+
+      if(ok){
+        t6Msg.className = 'msg good';
+        t6Msg.textContent = 'Верно!';
+        // Возвращаемся к видео2 -> задание 5 -> финал (так как ученик ранее ошибся в задании 5)
+        setTimeout(()=>go(ST.VIDEO2), 650);
+      } else {
+        t6HadError = true;
+        t6Msg.className = 'msg bad';
+        t6Msg.textContent = 'Пока нет. Смотри правило и попробуй ещё раз.';
+        setTimeout(()=>go(ST.RULE3), 550);
+      }
+    });
+
+    // ===== DEV MODE (показывает служебные подсказки) =====
+    (function(){
+      try{
+        const qs = new URLSearchParams(location.search);
+        if(qs.get('dev') === '1') document.body.classList.add('dev');
+      }catch(e){}
+      window.addEventListener('keydown', (e)=>{
+        if((e.ctrlKey || e.metaKey) && (e.key === 'i' || e.key === 'I')){
+          e.preventDefault();
+          document.body.classList.toggle('dev');
+        }
+      });
+    })();
+
+    // Старт
+    resetToIdle();
+  </script>
+</body>
+</html>

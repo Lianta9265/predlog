@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Predlog — интерактивные квесты</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <style>
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: radial-gradient(circle at top, #1a1f3c, #05060f);
+      color: #fff;
+    }
+    .wrap {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      text-align: center;
+    }
+    h1 {
+      margin-bottom: 10px;
+      font-size: 32px;
+    }
+    p {
+      opacity: .8;
+      margin-bottom: 30px;
+    }
+    a.quest {
+      display: block;
+      padding: 20px;
+      margin: 20px auto;
+      max-width: 420px;
+      border-radius: 18px;
+      text-decoration: none;
+      color: #fff;
+      font-size: 20px;
+      font-weight: 600;
+      background: linear-gradient(135deg, #5b7cff, #a46bff);
+      box-shadow: 0 0 30px rgba(120,140,255,.4);
+      transition: transform .15s ease, box-shadow .15s ease;
+    }
+    a.quest:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 0 40px rgba(120,140,255,.6);
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Predlog</h1>
+    <p>Интерактивные квесты по служебным словам</p>
+
+    <a class="quest" href="./vrode/">Квест «ВРОДЕ»</a>
+  </div>
+</body>
+</html>
