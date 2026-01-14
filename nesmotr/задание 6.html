@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Детектив Платон: Грамматический Квест</title>
+    <style>
+        :root {
+            --space-bg: #0b0e14;
+            --neon-green: #39ff14;
+            --neon-red: #ff3131;
+            --neon-blue: #00d4ff;
+            --text-color: #e0e0e0;
+        }
+
+        body {
+            background-color: var(--space-bg);
+            color: var(--text-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        #quiz-container {
+            background: rgba(20, 25, 35, 0.95);
+            border: 2px solid var(--neon-blue);
+            border-radius: 15px;
+            padding: 30px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 1px solid var(--neon-blue);
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+        }
+
+        .header h1 {
+            color: var(--neon-blue);
+            font-size: 1.5rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .question-box {
+            font-size: 1.2rem;
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+
+        .options-container {
+            display: grid;
+            gap: 15px;
+        }
+
+        .option-btn {
+            background: transparent;
+            border: 1px solid var(--text-color);
+            color: var(--text-color);
+            padding: 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: left;
+            font-size: 1rem;
+        }
+
+        .option-btn:hover {
+            background: rgba(0, 212, 255, 0.1);
+            border-color: var(--neon-blue);
+        }
+
+        .option-btn.correct {
+            background: rgba(57, 255, 20, 0.2) !important;
+            border-color: var(--neon-green) !important;
+        }
+
+        .option-btn.wrong {
+            background: rgba(255, 49, 49, 0.2) !important;
+            border-color: var(--neon-red) !important;
+        }
+
+        .rationale {
+            margin-top: 15px;
+            padding: 10px;
+            border-left: 3px solid var(--neon-blue);
+            background: rgba(255, 255, 255, 0.05);
+            display: none;
+            font-size: 0.95rem;
+            font-style: italic;
+        }
+
+        .hint-btn {
+            background: none;
+            border: none;
+            color: var(--neon-blue);
+            cursor: pointer;
+            font-size: 0.9rem;
+            margin-top: 10px;
+            text-decoration: underline;
+        }
+
+        .next-btn {
+            display: none;
+            margin-top: 25px;
+            width: 100%;
+            padding: 15px;
+            background: var(--neon-blue);
+            border: none;
+            border-radius: 8px;
+            color: #000;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+        }
+
+        .progress-bar {
+            height: 5px;
+            background: #333;
+            margin-top: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        #progress-fill {
+            height: 100%;
+            background: var(--neon-blue);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+
+<div id="quiz-container">
+    <div class="header">
+        <h1 id="quiz-title">Миссия: Несмотря</h1>
+        <div id="stats">Вопрос <span id="current-q">1</span> из <span id="total-q">?</span></div>
+    </div>
+
+    <div id="game-zone">
+        <div class="question-box" id="question-text">Загрузка систем навигации...</div>
+        <div class="options-container" id="options"></div>
+        <button class="hint-btn" id="hint-trigger">Получить подсказку от Платона</button>
+        <div class="rationale" id="rationale-box"></div>
+        <button class="next-btn" id="next-btn">Следующий сектор —></button>
+    </div>
+
+    <div class="progress-bar">
+        <div id="progress-fill"></div>
+    </div>
+</div>
+
+<script>
+const quizData = [
+    {
+        question: "Инструкция: «Выходи в открытый космос, (не)смотря на страх». Как напишем?",
+        options: [
+            { text: "Слитно: несмотря на", isCorrect: true, rationale: "Здесь значение «вопреки страху» (уступка), это предлог." },
+            { text: "Раздельно: не смотря на", isCorrect: false, rationale: "Страх нельзя буквально рассматривать глазами." }
+        ],
+        hint: "Можно ли заменить на «хотя тебе страшно»?"
+    },
+    {
+        question: "Платон шел по трапу, (не)смотря на  ступени. Как напишем?",
+        options: [
+            { text: "Раздельно: не смотря", isCorrect: true, rationale: "Это физическое действие глаз: он не смотрел по сторонам." },
+            { text: "Слитно: несмотря", isCorrect: false, rationale: "Слитное написание превратило бы стороны в препятствие." }
+        ],
+        hint: "Попробуй добавить слово «глазами»."
+    },
+    {
+        question: "Робот Глэм чинил провода, (не)смотря на схему. Почему это привело к аварии?",
+        options: [
+            { text: "Потому что он буквально НЕ СМОТРЕЛ (раздельно) на схему.", isCorrect: true, rationale: "Раздельное написание подчеркивает отсутствие зрительного контроля." },
+            { text: "Потому что он действовал ВОПРЕКИ (слитно) схеме.", isCorrect: false, rationale: "Он просто в нее не глядел, а не нарушал её намеренно." }
+        ],
+        hint: "Проблема в том, что он действовал вслепую."
+    },
+    {
+        question: "(Не)смотря на перегрузки, корабль выдержал взлет. Как пишется предлог?",
+        options: [
+            { text: "Слитно", isCorrect: true, rationale: "Это значение уступки: вопреки перегрузкам." },
+            { text: "Раздельно", isCorrect: false, rationale: "Перегрузки нельзя увидеть глазами, это физическое состояние." }
+        ],
+        hint: "Замени на «вопреки»."
+    },
+    {
+        question: "Выберите правильный вариант: «Он прошел мимо, (не)смотря на меня».",
+        options: [
+            { text: "Не смотря (раздельно)", isCorrect: true, rationale: "Он не направил взгляд в мою сторону." },
+            { text: "Несмотря (слитно)", isCorrect: false, rationale: "Я не был препятствием, которое он героически преодолел." }
+        ],
+        hint: "Здесь важно направление взгляда?"
+    },
+    {
+        question: "Платон победил, (не)смотря на плохие прогнозы. Как пишется слово?",
+        options: [
+            { text: "Слитно: несмотря на", isCorrect: true, rationale: "Вопреки прогнозам (информации)." },
+            { text: "Раздельно: не смотря на", isCorrect: false, rationale: "Раздельно значило бы, что он просто не читал листок с прогнозом." }
+        ],
+        hint: "Замени на «хотя прогнозы были плохими»."
+    },
+    {
+        question: "(Не)смотря на крики Платона, Глэм нажал кнопку. Какое здесь значение?",
+        options: [
+            { text: "Значение уступки (слитно): вопреки крикам.", isCorrect: true, rationale: "Крики — это звук, их нельзя увидеть, только проигнорировать." },
+            { text: "Значение зрения (раздельно): не глядя на крики.", isCorrect: false, rationale: "Крики невидимы для глаз." }
+        ],
+        hint: "Крики слышат или видят?"
+    },
+    {
+        question: "Задание диспетчера: «Посадка разрешена (не)смотря на туман».",
+        options: [
+            { text: "Слитно", isCorrect: true, rationale: "Вопреки туману (обстоятельство)." },
+            { text: "Раздельно", isCorrect: false, rationale: "Раздельное написание заставит пилота зажмуриться." }
+        ],
+        hint: "Замени на «хотя есть туман»."
+    },
+    {
+        question: "Глэм прошел сквозь стену, даже (не)смотря на дверь. В чем юмор?",
+        options: [
+            { text: "Раздельно: он не видел дверь и проломил стену.", isCorrect: true, rationale: "Юмор в том, что он буквально не смотрел, куда идет." },
+            { text: "Слитно: он игнорировал дверь.", isCorrect: false, rationale: "Слитное написание сделало бы его поступок слишком осознанным." }
+        ],
+        hint: "Дверь не попала  в  поле зрения?"
+    },
+    {
+        question: "(Не)смотря на усталость, экипаж продолжал работу. Здесь...",
+        options: [
+            { text: "Предлог (слитно)", isCorrect: true, rationale: "Вопреки усталости (состояние)." },
+            { text: "Деепричастие (раздельно)", isCorrect: false, rationale: "Усталость не имеет визуального образа." }
+        ],
+        hint: "Замени на «хотя устали»."
+    },
+    {
+        question: "Глэм обиделся и ушел, (не)смотря на Платона. Как правильно?",
+        options: [
+            { text: "Раздельно", isCorrect: true, rationale: "Он демонстративно не смотрел на него." },
+            { text: "Слитно", isCorrect: false, rationale: "Платон не был препятствием, от которого робот отвернулся." }
+        ],
+        hint: "Он отвернул голову?"
+    },
+    {
+        question: "(Не)смотря на низкий заряд, робот дополз до станции. Пишем...",
+        options: [
+            { text: "Слитно", isCorrect: true, rationale: "Вопреки разряженной батарее." },
+            { text: "Раздельно", isCorrect: false, rationale: "Заряд — это цифра, на него нельзя «не смотреть» глазами." }
+        ],
+        hint: "Можно заменить на «вопреки»?"
+    },
+    {
+        question: "Ученик сдал тест, (не)смотря на сложность. Пишем...",
+        options: [
+            { text: "Слитно", isCorrect: true, rationale: "Вопреки сложности заданий." },
+            { text: "Раздельно", isCorrect: false, rationale: "Сложность нельзя увидеть глазами." }
+        ],
+        hint: "Замени на «хотя было сложно»."
+    },
+    {
+        question: "Робот наливал чай, (не)смотря на чашку. Почему чай пролился?",
+        options: [
+            { text: "Потому что он НЕ СМОТРЕЛ (раздельно) на чашку.", isCorrect: true, rationale: "Раздельное написание подчеркивает отсутствие контроля глазами." },
+            { text: "Потому что он действовал ВОПРЕКИ (слитно) чашке.", isCorrect: false, rationale: "Чашка не сопротивлялась его воле." }
+        ],
+        hint: "Проблема была фокусировке  взгляда."
+    },
+    {
+        question: "(Не)смотря на юный возраст, Платон стал капитаном. Пишем...",
+        options: [
+            { text: "Слитно", isCorrect: true, rationale: "Вопреки возрасту (уступка)." },
+            { text: "Раздельно", isCorrect: false, rationale: "Возраст не объект для разглядывания." }
+        ],
+        hint: "Замени на «хотя он еще молод»."
+    },
+    {
+        question: "В каком предложении «не смотря» должно быть РАЗДЕЛЬНО?",
+        options: [
+            { text: "Он печатал текст, (не)смотря на клавиатуру.", isCorrect: true, rationale: "Печатать «вслепую» — значит физически не смотреть на кнопки." },
+            { text: "Мы гуляли, (не)смотря на дождь.", isCorrect: false, rationale: "Здесь значение «вопреки дождю»." },
+            { text: "Он улыбался, (не)смотря на грусть.", isCorrect: false, rationale: "Здесь значение «вопреки грусти»." },
+            { text: "Полет продолжался, (не)смотря на перебои.", isCorrect: false, rationale: "Здесь значение «вопреки перебоям»." }
+        ],
+        hint: "Где действие совершается буквально «не глядя»?"
+    }
+];
+
+let currentQuestionIndex = 0;
+let score = 0;
+
+// Текущие перемешанные варианты (нужно для правильной подсветки после shuffle)
+let currentShuffledOptions = [];
+
+const questionText = document.getElementById('question-text');
+const optionsContainer = document.getElementById('options');
+const rationaleBox = document.getElementById('rationale-box');
+const nextBtn = document.getElementById('next-btn');
+const currentQSpan = document.getElementById('current-q');
+const totalQSpan = document.getElementById('total-q');
+const progressFill = document.getElementById('progress-fill');
+const hintTrigger = document.getElementById('hint-trigger');
+
+function shuffleArray(arr) {
+    // Fisher–Yates
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+}
+
+function loadQuestion() {
+    const q = quizData[currentQuestionIndex];
+
+    // Динамический счётчик "из N"
+    totalQSpan.innerText = quizData.length;
+
+    questionText.innerText = q.question;
+    optionsContainer.innerHTML = '';
+    rationaleBox.style.display = 'none';
+    nextBtn.style.display = 'none';
+    hintTrigger.style.display = 'block';
+    currentQSpan.innerText = currentQuestionIndex + 1;
+    progressFill.style.width = `${(currentQuestionIndex / quizData.length) * 100}%`;
+
+    // ПЕРЕМЕШИВАЕМ варианты (создаём копию массива options)
+    currentShuffledOptions = shuffleArray(q.options.map(o => ({ ...o })));
+
+    currentShuffledOptions.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = 'option-btn';
+        btn.innerText = opt.text;
+        btn.onclick = () => selectOption(btn, opt);
+        optionsContainer.appendChild(btn);
+    });
+}
+
+function selectOption(btn, opt) {
+    const allBtns = document.querySelectorAll('.option-btn');
+
+    // блокируем повторные клики
+    allBtns.forEach(b => b.style.pointerEvents = 'none');
+
+    if (opt.isCorrect) {
+        btn.classList.add('correct');
+        score++;
+    } else {
+        btn.classList.add('wrong');
+
+        // Подсветим правильный В ТЕКУЩЕМ (перемешанном) порядке
+        const correctIndex = currentShuffledOptions.findIndex(o => o.isCorrect);
+        if (correctIndex >= 0 && allBtns[correctIndex]) {
+            allBtns[correctIndex].classList.add('correct');
+        }
+    }
+
+    rationaleBox.innerText = opt.rationale || '';
+    rationaleBox.style.display = 'block';
+    nextBtn.style.display = 'block';
+    hintTrigger.style.display = 'none';
+}
+
+hintTrigger.onclick = () => {
+    alert("Подсказка Платона: " + quizData[currentQuestionIndex].hint);
+};
+
+nextBtn.onclick = () => {
+    currentQuestionIndex++;
+    if (currentQuestionIndex < quizData.length) {
+        loadQuestion();
+    } else {
+        showResults();
+    }
+};
+
+function showResults() {
+    progressFill.style.width = '100%';
+    document.getElementById('game-zone').innerHTML = `
+        <div style="text-align:center;">
+            <h2>Миссия завершена!</h2>
+            <p style="font-size: 1.5rem;">Ваш результат: ${score} из ${quizData.length}</p>
+            <p>${score === quizData.length ? "Вы — магистр грамматического космоса!" : "Хороший полет, но стоит подтянуть навигацию!"}</p>
+            <button class="next-btn" style="display:block;" onclick="location.reload()">Начать заново</button>
+        </div>
+    `;
+}
+
+loadQuestion();
+</script>
+
+</body>
+</html>
