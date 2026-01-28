@@ -1,0 +1,1288 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Интерактивное видео — НАСЧЁТ</title>
+  <style>
+    :root{
+      --bg1:#070b1a;
+      --bg2:#141a33;
+      --card: rgba(255,255,255,.08);
+      --card2: rgba(255,255,255,.12);
+      --stroke: rgba(255,255,255,.18);
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.72);
+      --good: #3df08b;
+      --bad: #ff4d6d;
+      --warn: #ffd166;
+      --accent: #66d9ff;
+      --accent2:#b988ff;
+      --shadow: 0 18px 60px rgba(0,0,0,.45);
+      --radius: 18px;
+    }
+
+    *{ box-sizing:border-box; }
+    html, body{ height:100%; }
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      color: var(--text);
+      background:
+        radial-gradient(1200px 700px at 20% 0%, rgba(102,217,255,.32), transparent 55%),
+        radial-gradient(900px 600px at 90% 10%, rgba(185,136,255,.30), transparent 55%),
+        radial-gradient(900px 700px at 60% 100%, rgba(61,240,139,.22), transparent 55%),
+        linear-gradient(180deg, var(--bg1), var(--bg2));
+      overflow:hidden;
+    }
+
+    .stars{ position: fixed; inset: 0; z-index: -1; pointer-events:none; }
+    .stars::before,
+    .stars::after{
+      content:"";
+      position:absolute;
+      inset:-40px;
+      background-image:
+        radial-gradient(1px 1px at 20px 30px, rgba(255,255,255,.45), transparent 55%),
+        radial-gradient(1px 1px at 140px 90px, rgba(255,255,255,.35), transparent 55%),
+        radial-gradient(1px 1px at 280px 160px, rgba(255,255,255,.30), transparent 55%),
+        radial-gradient(1px 1px at 420px 40px, rgba(255,255,255,.28), transparent 55%),
+        radial-gradient(1px 1px at 560px 120px, rgba(255,255,255,.26), transparent 55%),
+        radial-gradient(1px 1px at 700px 200px, rgba(255,255,255,.32), transparent 55%),
+        radial-gradient(1px 1px at 840px 80px, rgba(255,255,255,.22), transparent 55%),
+        radial-gradient(1px 1px at 980px 170px, rgba(255,255,255,.24), transparent 55%),
+        radial-gradient(900px 900px at 15% 85%, rgba(102,217,255,.08), transparent 55%),
+        radial-gradient(800px 800px at 80% 25%, rgba(185,136,255,.08), transparent 55%);
+      opacity:.55;
+      pointer-events:none;
+      filter: blur(.2px);
+      transform: translateZ(0);
+    }
+    .stars::after{ opacity:.35; transform: scale(1.1); }
+
+    .app{
+      position:relative;
+      height:100%;
+      display:flex;
+      flex-direction:column;
+      gap:14px;
+      padding:16px;
+    }
+
+    header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .brand{
+      display:flex;
+      align-items:baseline;
+      gap:10px;
+      user-select:none;
+    }
+    .brand .title{
+      font-weight:800;
+      letter-spacing:.2px;
+      font-size:16px;
+      opacity:.95;
+    }
+    .brand .badge{
+      font-size:12px;
+      color: var(--muted);
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.12);
+      padding:6px 10px;
+      border-radius:999px;
+    }
+
+    .controls{
+      display:flex;
+      gap:10px;
+      align-items:center;
+    }
+
+    button{
+      appearance:none;
+      border:none;
+      cursor:pointer;
+      color: var(--text);
+      background:
+        linear-gradient(135deg, rgba(255,255,255,.12), rgba(255,255,255,.08));
+      border: 1px solid rgba(255,255,255,.22);
+      padding:10px 14px;
+      border-radius: 14px;
+      font-weight:700;
+      letter-spacing:.3px;
+      box-shadow:
+        0 12px 28px rgba(0,0,0,.28),
+        0 0 22px rgba(102,217,255,.10);
+      transition: transform .12s ease, background .12s ease, border-color .12s ease, opacity .12s ease;
+      user-select:none;
+      white-space:nowrap;
+      font-size: 0.95em;
+      text-shadow: 0 1px 0 rgba(0,0,0,.25);
+    }
+    button:hover{ transform: translateY(-1px); background: rgba(255,255,255,.14); border-color: rgba(255,255,255,.22); }
+    button:active{ transform: translateY(0px) scale(.99); }
+    button[disabled]{ opacity:.45; cursor:not-allowed; transform:none; }
+
+    .btn-primary{
+      background: linear-gradient(135deg, rgba(102,217,255,.32), rgba(185,136,255,.22));
+      border-color: rgba(102,217,255,.38);
+      box-shadow:
+        0 14px 30px rgba(0,0,0,.28),
+        0 0 28px rgba(102,217,255,.28);
+    }
+    .btn-primary:hover{ background: linear-gradient(135deg, rgba(102,217,255,.40), rgba(185,136,255,.28)); }
+
+    .btn-warn{
+      background: linear-gradient(135deg, rgba(255,209,102,.22), rgba(255,255,255,.08));
+      border-color: rgba(110, 255, 102, 0.45);
+      box-shadow:
+        0 14px 30px rgba(0,0,0,.28),
+        0 0 26px rgba(255,209,102,.20);
+    }
+
+    .pulse{
+      animation: pulse 1.05s ease-in-out infinite;
+      box-shadow: 0 0 0 0 rgba(255,209,102,.35), 0 12px 28px rgba(0,0,0,.25);
+    }
+    @keyframes pulse{
+      0%{ box-shadow: 0 0 0 0 rgba(255,209,102,.38), 0 12px 28px rgba(0,0,0,.25); }
+      70%{ box-shadow: 0 0 0 10px rgba(255,209,102,0), 0 12px 28px rgba(0,0,0,.25); }
+      100%{ box-shadow: 0 0 0 0 rgba(255,209,102,0), 0 12px 28px rgba(0,0,0,.25); }
+    }
+
+    .stage{
+      flex:1;
+      min-height:0;
+      display:grid;
+      grid-template-columns: 1.35fr .9fr;
+      gap:14px;
+    }
+
+    .panel{
+      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.05));
+      border: 1px solid rgba(255,255,255,.22);
+      border-radius: var(--radius);
+      box-shadow:
+        inset 0 0 26px rgba(255,255,255,.07),
+        0 18px 60px rgba(0,0,0,.45),
+        0 0 40px rgba(102,217,255,.12);
+      backdrop-filter: blur(10px);
+      overflow:hidden;
+      position:relative;
+      min-height:0;
+    }
+
+    .panel::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      border-radius: inherit;
+      pointer-events:none;
+      background:
+        radial-gradient(900px 200px at 20% 0%, rgba(102,217,255,.18), transparent 60%),
+        radial-gradient(700px 240px at 90% 10%, rgba(185,136,255,.14), transparent 60%);
+      opacity:.35;
+      mix-blend-mode: screen;
+    }
+
+    .panel::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      border-radius: inherit;
+      pointer-events:none;
+      box-shadow:
+        inset 0 0 0 1px rgba(102, 217, 255, 0.608),
+        inset 0 0 18px rgba(222, 102, 255, 0.596),
+        0 0 28px rgba(102, 217, 255, 0.485);
+      mix-blend-mode: screen;
+      animation: glowPulse 4s ease-in-out infinite;
+    }
+    @keyframes glowPulse{ 0%{opacity:.6} 50%{opacity:1} 100%{opacity:.6} }
+
+    .screen{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      height:100%;
+      min-height:0;
+      padding:14px;
+    }
+
+    .media-wrap{
+      width:100%;
+      height:100%;
+      min-height:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    video, img{
+      width:100%;
+      height:100%;
+      object-fit: contain;
+      border-radius: 14px;
+      background: rgba(0,0,0,.22);
+      border: 1px solid rgba(255,255,255,.10);
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,.08),
+        0 0 30px rgba(102,217,255,.10);
+    }
+
+    .right{
+      display:flex;
+      flex-direction:column;
+      min-height:0;
+    }
+
+    .card{
+      padding:14px;
+      border-bottom: 1px solid rgba(255,255,255,.10);
+      background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
+    }
+
+    .card h2{
+      margin:0 0 6px 0;
+      font-size:16px;
+      letter-spacing:.2px;
+    }
+
+    .card p{ margin:0; color:var(--muted); font-size:13px; line-height:1.35; }
+
+    .task{
+      padding:14px;
+      overflow:auto;
+      min-height:0;
+      animation: taskAppear .32s ease;
+    }
+    @keyframes taskAppear{
+      from{ opacity: 0; transform: translateY(6px) scale(.985); }
+      to{ opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .task-title,
+    .task-title *{ display:none !important; }
+
+    .q{
+      margin:0 0 10px 0;
+      font-size: 1.3em;
+      line-height: 1.6;
+    }
+
+    .options{ display:flex; flex-direction:column; gap:10px; margin: 10px 0 12px 0; }
+
+    .opt{
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      padding:10px 10px;
+      border-radius: 14px;
+      background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.05));
+      border: 1px solid rgba(255,255,255,.16);
+      box-shadow:
+        inset 0 0 16px rgba(255,255,255,.05),
+        0 10px 22px rgba(0,0,0,.20);
+      transition: background .12s ease, border-color .12s ease;
+    }
+    .opt:hover{ background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.18); }
+
+    .opt input{ margin-top:2px; }
+
+    .row{ display:flex; gap:10px; flex-wrap:wrap; }
+
+    .msg{
+      margin-top:12px;
+      padding:10px 12px;
+      border-radius: 14px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid rgba(255,255,255,.12);
+      font-weight:700;
+      display:none;
+    }
+
+    .msg.good{ display:block; border-color: rgba(61,240,139,.55); background: linear-gradient(135deg, rgba(61,240,139,.16), rgba(102,217,255,.10)); }
+    .msg.bad{ display:block; border-color: rgba(255,77,109,.55); background: linear-gradient(135deg, rgba(255,77,109,.16), rgba(185,136,255,.10)); }
+
+    .hint{ display:none !important; }
+
+    .footer-note{ margin-top:auto; padding:10px 14px; border-top: 1px solid rgba(255,255,255,.10); color: rgba(255,255,255,.60); font-size: 12px; }
+
+    .hidden{ display:none !important; }
+
+    /* Выпадающие списки */
+    select.inline-select{
+      appearance:none;
+      background: linear-gradient(135deg, rgba(102,217,255,.18), rgba(185,136,255,.14));
+      border: 1px solid rgba(255,255,255,.28);
+      color: var(--text);
+      padding:8px 10px;
+      border-radius: 12px;
+      font-weight:800;
+      letter-spacing:.2px;
+      outline:none;
+      box-shadow:
+        0 12px 26px rgba(0,0,0,.22),
+        0 0 26px rgba(102,217,255,.18),
+        inset 0 0 12px rgba(255,255,255,.10);
+      margin: 0 6px;
+    }
+    select.inline-select:focus{
+      border-color: rgba(102, 217, 255, 0.64);
+      box-shadow:
+        0 0 0 3px rgba(61,240,139,.18),
+        0 0 28px rgba(61,240,139,.55),
+        inset 0 0 14px rgba(255,255,255,.15);
+    }
+    option{ color:#111; }
+
+    @media (max-width: 980px){
+      .stage{ grid-template-columns: 1fr; }
+      .right{ order:-1; }
+    }
+
+    /* TASK 6: кликабельный текст */
+    #task6 .q{ line-height: 1.8; }
+    .token{
+      display:inline-block;
+      padding: 2px 8px;
+      margin: 1px 2px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.18);
+      background: rgba(255,255,255,.06);
+      cursor: pointer;
+      user-select:none;
+      font-weight: 900;
+      letter-spacing: .2px;
+      transition: transform .08s ease, box-shadow .12s ease, background .12s ease, border-color .12s ease;
+    }
+    .token:hover{ transform: translateY(-1px); border-color: rgba(102,217,255,.35); box-shadow: 0 0 18px rgba(102,217,255,.14); }
+    .token.selected{ border-color: rgba(102,217,255,.55); background: rgba(102,217,255,.10); box-shadow: 0 0 22px rgba(102,217,255,.16); }
+    .token.selected.good{ border-color: rgba(61,240,139,.70); background: rgba(61,240,139,.14); box-shadow: 0 0 22px rgba(61,240,139,.22); }
+    .token.selected.bad{ border-color: rgba(255,77,109,.70); background: rgba(255,77,109,.14); box-shadow: 0 0 22px rgba(255,77,109,.18); }
+  
+    /* Подписи для правил */
+    #ruleOverlay{
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+    }
+    .rule-label{
+      position:absolute;
+      left:50%;
+      transform:translateX(-50%);
+      padding:8px 16px;
+      border-radius:999px;
+      font-weight:900;
+      letter-spacing:.3px;
+      background:linear-gradient(135deg, rgba(102,217,255,.35), rgba(185,136,255,.25));
+      border:1px solid rgba(255,255,255,.35);
+      box-shadow:
+        0 0 18px rgba(102,217,255,.45),
+        0 0 28px rgba(185,136,255,.35);
+      text-shadow:
+        0 0 10px rgba(102,217,255,.8),
+        0 0 16px rgba(185,136,255,.6);
+      color:#fff;
+      z-index:5;
+    }
+    .rule-label.top{ top:12px; }
+    .rule-label.bottom{
+      bottom:12px;
+      font-size:13px;
+      font-weight:800;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="stars"></div>
+  <div class="app">
+    <header>
+      <div class="brand">
+        <div class="title">Платон: НАСЧЁТ</div>
+        <div class="badge" id="statusBadge">Готово к старту</div>
+      </div>
+      <div class="controls">
+        <button class="btn-primary" id="btnStart">СТАРТ</button>
+        <button class="btn-warn" id="btnContinue" disabled>ПРОДОЛЖИТЬ</button>
+      </div>
+    </header>
+
+    <main class="stage">
+      <section class="panel" aria-label="Экран">
+        <div class="screen">
+          <div class="media-wrap">
+            <video id="player" class="hidden" playsinline preload="metadata"></video>
+            <img id="picture" class="hidden" alt="Кадр" />
+            <div id="ruleOverlay" class="hidden">
+              <div class="rule-label top">ПРЕДЛОГ</div>
+              <div class="rule-label bottom">СУЩЕСТВИТЕЛЬНОЕ с предлогом</div>
+            </div>
+            <div id="welcome" style="max-width:720px; text-align:center; padding:26px;">
+              <div style="font-weight:900; font-size:22px; letter-spacing:.2px;">Интерактивное видео</div>
+              <div style="margin-top:10px; color:var(--muted); line-height:1.45;">
+                Нажми <b>СТАРТ</b> — смотри, что произошло с Платоном. Выполняй задания.
+                <br />Если ошибёшься, повтори правило и нажми <b>ПРОДОЛЖИТЬ</b>.
+              </div>
+             <!--
+			 <div style="margin-top:12px; font-size:12px; color:rgba(255,255,255,.55);">
+                В одной папке с <b>index.html</b> должны лежать файлы:
+                <b>video.mp4</b>, <b>video1.mp4</b>, <b>video2.mp4</b>, <b>video3.mp4</b>, <b>video4.mp4</b>,
+                <b>rule.png</b>, <b>rule2.png</b>, <b>rule3.png</b>, <b>rule4.png</b>,
+                <b>задание2.html</b>, <b>задание4.html</b>, <b>задание5.html</b>, <b>задание 6.html</b>
+              </div>
+			  -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="panel right" aria-label="Задания">
+        <div class="card">
+          <h2 id="panelTitle">Панель заданий</h2>
+          <p id="panelDesc">Здесь будут появляться задания. Жми «СТАРТ».</p>
+        </div>
+
+        <!-- TASK 1 -->
+        <div class="task hidden" id="task1">
+          <div class="task-title">.</div>
+          <p class="q">Платон просит распорядиться<br><b>(НА)СЧЁТ ужина</b>.<br>Расшифруй для робота:</p>
+          <div class="options">
+            <label class="opt"><input type="radio" name="t1" value="1"> <span>1) <b>НА СЧЁТ</b> (ужина) — <b>предлог</b></span></label>
+            <label class="opt"><input type="radio" name="t1" value="2"> <span>2) <b>НАСЧЁТ</b> (ужина) — <b>предлог</b></span></label>
+            <label class="opt"><input type="radio" name="t1" value="3"> <span>3) <b>НА СЧЁТ</b> (ужина) — <b>существительное с предлогом</b></span></label>
+            <label class="opt"><input type="radio" name="t1" value="4"> <span>4) <b>НАСЧЁТ</b> (ужина) — <b>существительное с предлогом</b></span></label>
+          </div>
+          <div class="row">
+            <button id="t1Check">ПРОВЕРИТЬ</button>
+          </div>
+          <div class="msg" id="t1Msg"></div>
+        </div>
+
+        <!-- TASK 2 (резерв после ошибки в 1) -->
+        <div class="task hidden" id="task2">
+          <div class="task-title">.</div>
+          <p class="q">Отметь все предложения, где <b>НАСЧЁТ</b> — это <b>предлог</b> (можно заменить на «вопреки»).</p>
+          <div class="options" id="t2Options">
+            <label class="opt"><input type="checkbox" value="1"> <span>Корабль сел, <b>насчёт туман</b>.</span></label>
+            <label class="opt"><input type="checkbox" value="2"> <span>Робот шёл по коридору, <b>на счёт экран</b>.</span></label>
+            <label class="opt"><input type="checkbox" value="3"> <span>Платон продолжал полёт, <b>насчёт усталость</b>.</span></label>
+            <label class="opt"><input type="checkbox" value="4"> <span>Пилот нажал кнопку, <b>на счёт приборы</b>.</span></label>
+          </div>
+          <div class="row">
+            <button id="t2Check">ПРОВЕРИТЬ</button>
+          </div>
+          <div class="msg" id="t2Msg"></div>
+        </div>
+
+        <!-- TASK 3 -->
+        <div class="task hidden" id="task3">
+          <div class="task-title">.</div>
+          <p class="q">Робот заказывает ужин на все премиальные Платона,<br>отложенные на ремонт корабля.<br>Он понял <b>(НА)СЧЁТ</b>…</p>
+          <div class="options">
+            <label class="opt"><input type="radio" name="t3" value="1"> <span>1) как <b>существительное с предлогом</b> («на что?»)</span></label>
+            <label class="opt"><input type="radio" name="t3" value="2"> <span>2) как <b>наречие</b> («=зачётно»)</span></label>
+            <label class="opt"><input type="radio" name="t3" value="2"> <span>3) как <b>причастие</b> («=зачтено»)</span></label>
+            <label class="opt"><input type="radio" name="t3" value="2"> <span>4) как <b>предлог</b> («=по поводу»)</span></label>
+          </div>
+          <div class="row">
+            <button id="t3Check">ПРОВЕРИТЬ</button>
+          </div>
+          <div class="msg" id="t3Msg"></div>
+        </div>
+
+        <!-- TASK 4 (резерв после ошибки в 3) -->
+        <div class="task hidden" id="task4">
+          <div class="task-title">.</div>
+          <p class="q">Отметь предложения, где <b>НА СЧЁТ</b> — это <b>существительное с предлогом</b> (буквально «не глядя глазами»).</p>
+          <div class="options" id="t4Options">
+            <label class="opt"><input type="checkbox" value="1"> <span>Робот управлял кораблём, <b>(не)смотря на приборы</b>.</span></label>
+            <label class="opt"><input type="checkbox" value="2"> <span>Экспедиция продолжалась, <b>(не)смотря на опасность</b>.</span></label>
+            <label class="opt"><input type="checkbox" value="3"> <span>Пилот шёл к посадочной площадке, <b>(не)смотря на неё</b>.</span></label>
+            <label class="opt"><input type="checkbox" value="4"> <span>Платон продолжал миссию, <b>(не)смотря на трудности</b>.</span></label>
+          </div>
+          <div class="row">
+            <button id="t4Check">ПРОВЕРИТЬ</button>
+          </div>
+          <div class="msg" id="t4Msg"></div>
+        </div>
+
+        <!-- TASK 5 (основное после video2) -->
+        <div class="task hidden" id="task5">
+          <div class="task-title">.</div>
+          <p class="q">
+            Платон кричит роботу:
+            <br><br>
+            <b>«Я разберу тебя на запчасти, (НЕ)СМОТРЯ НА твои сертификаты</b>
+            (<select class="inline-select" id="t5Sel1">
+              <option value="">— выбери —</option>
+              <option value="ger">существительное с предлогом, раздельно</option>
+              <option value="prep">предлог, слитно</option>
+            </select>)
+            <b>— точно так же, как и ты на экран!</b>
+            <br><br>
+            <b>(НЕ)СМОТРЯ НА ТО, что ты гуманоид</b>
+            (<select class="inline-select" id="t5Sel2">
+              <option value="">— выбери —</option>
+              <option value="prep">предлог, слитно</option>
+              <option value="ger">существительное с предлогом, раздельно</option>
+            </select>)
+            <b>!»</b>
+          </p>
+          <div class="row">
+            <button id="t5Check">ПРОВЕРИТЬ</button>
+          </div>
+          <div class="msg" id="t5Msg"></div>
+        </div>
+
+        <!-- TASK 6 (резерв после ошибки в 5) -->
+        <div class="task hidden" id="task6">
+          <div class="task-title">.</div>
+          <p class="q">
+            Кликни только там, где <b>насчёт</b> — это <b>предлог</b> (≈ «о чём-то, по поводу чего-то»):
+            <br><br>
+            Мы продолжили полёт <span class="token" data-correct="1">(не)смотря на</span> перегрузки, но робот шёл по трапу
+            <span class="token" data-correct="0">(не)смотря на</span> ступени.
+            Платон улыбался <span class="token" data-correct="1">(не)смотря на</span> усталость, а диспетчер нажал кнопку
+            <span class="token" data-correct="0">(не)смотря на</span> монитор.
+          </p>
+          <div class="row">
+            <button id="t6Check">ПРОВЕРИТЬ</button>
+          </div>
+          <div class="msg" id="t6Msg"></div>
+        </div>
+
+        <div class="footer-note" id="footerNote"></div>
+      </aside>
+    </main>
+  </div>
+
+  <script>
+    // ====== ФАЙЛЫ (лежат рядом с index.html) ======
+    const INTRO = 'video.mp4';
+    const AFTER_T1 = 'video1.mp4';
+    const VIDEO2 = 'video2.mp4';
+    const VIDEO4 = 'video4.mp4';
+
+    const RULE1_IMG = 'rule.png';
+    const RULE2_IMG = 'rule2.png';
+    const RULE3_IMG = 'rule3.png';
+    const RULE4_IMG = 'rule4.png'; // ← Добавлено новое правило
+
+    const FINAL = 'video3.mp4';
+    const QUIZ_FILE = 'задание 6.html';
+    const TASK2_FILE = 'задание2.html';
+    const TASK4_FILE = 'задание4.html';
+    const TASK5_FILE = 'задание5.html';
+
+    // ====== СТЕЙТЫ ======
+    const ST = {
+      IDLE: 'IDLE',
+      INTRO_VIDEO: 'INTRO_VIDEO',
+
+      TASK1: 'TASK1',
+      RULE1: 'RULE1',
+      TASK2: 'TASK2',
+      VIDEO4: 'VIDEO4',
+      VIDEO1: 'VIDEO1',
+
+      TASK3: 'TASK3',
+      RULE2: 'RULE2',
+      TASK4: 'TASK4',
+
+      VIDEO2: 'VIDEO2',
+      TASK5: 'TASK5',
+
+      RULE3: 'RULE3',
+      QUIZ: 'QUIZ',
+
+      FINAL: 'FINAL',
+      FINAL_LOOP: 'FINAL_LOOP'
+    };
+
+    let state = ST.IDLE;
+
+    const btnStart = document.getElementById('btnStart');
+    const btnContinue = document.getElementById('btnContinue');
+    const statusBadge = document.getElementById('statusBadge');
+
+    const player = document.getElementById('player');
+    const picture = document.getElementById('picture');
+    const welcome = document.getElementById('welcome');
+
+    const panelTitle = document.getElementById('panelTitle');
+    const panelDesc = document.getElementById('panelDesc');
+
+    const task1 = document.getElementById('task1');
+    const task2 = document.getElementById('task2');
+    const task3 = document.getElementById('task3');
+    const task4 = document.getElementById('task4');
+    const task5 = document.getElementById('task5');
+    const task6 = document.getElementById('task6');
+
+    const t1Check = document.getElementById('t1Check');
+    const t1Msg = document.getElementById('t1Msg');
+
+    const t2Check = document.getElementById('t2Check');
+    const t2Msg = document.getElementById('t2Msg');
+
+    const t3Check = document.getElementById('t3Check');
+    const t3Msg = document.getElementById('t3Msg');
+
+    const t4Check = document.getElementById('t4Check');
+    const t4Msg = document.getElementById('t4Msg');
+
+    const t5Sel1 = document.getElementById('t5Sel1');
+    const t5Sel2 = document.getElementById('t5Sel2');
+    const t5Check = document.getElementById('t5Check');
+    const t5Msg = document.getElementById('t5Msg');
+
+    const t6Check = document.getElementById('t6Check');
+    const t6Msg = document.getElementById('t6Msg');
+    const t6Tokens = [...document.querySelectorAll('#task6 .token')];
+
+    function setBadge(text){ statusBadge.textContent = text; }
+
+    function enableContinuePulse(on){
+      if(on){
+        btnContinue.disabled = false;
+        btnContinue.classList.add('pulse');
+      } else {
+        btnContinue.disabled = true;
+        btnContinue.classList.remove('pulse');
+      }
+    }
+
+    function showOnlyTask(el){
+      [task1, task2, task3, task4, task5, task6].forEach(t => t.classList.add('hidden'));
+      if(el) el.classList.remove('hidden');
+    }
+
+    function clearMsgs(){
+      [t1Msg,t2Msg,t3Msg,t4Msg,t5Msg,t6Msg].forEach(m => { m.className = 'msg'; m.textContent=''; });
+    }
+
+    function hideMedia(){
+      try{ player.pause(); }catch(e){}
+      player.classList.add('hidden');
+      picture.classList.add('hidden');
+      welcome.classList.add('hidden');
+      player.controls = false;
+
+      const overlay = document.getElementById('ruleOverlay');
+      if(overlay) overlay.classList.add('hidden');
+      
+      // Удаляем полноэкранный iframe если есть
+      const fullscreenIframe = document.getElementById('quizFullscreen');
+      if (fullscreenIframe) {
+        fullscreenIframe.remove();
+      }
+    }
+
+    function showWelcome(){
+      hideMedia();
+      welcome.classList.remove('hidden');
+    }
+
+    async function playVideo(filename, loop = false){
+      hideMedia();
+      player.classList.remove('hidden');
+      player.src = filename;
+      player.load();
+      player.loop = loop;
+
+      // запуск по клику «СТАРТ/ПРОДОЛЖИТЬ» обычно разрешает звук
+      player.muted = false;
+      player.playsInline = true;
+
+      try{
+        await player.play();
+      } catch(e){
+        // если браузер капризничает — дадим controls
+        console.warn('Autoplay blocked:', e);
+        player.controls = true;
+        setBadge('Нажми ▶ на видео (если не стартует)');
+        try{
+          player.muted = true;
+          await player.play();
+        } catch(e2){ /* оставляем controls */ }
+      }
+    }
+
+    function showImage(filename, alt='Картинка'){
+      hideMedia();
+      picture.classList.remove('hidden');
+      picture.alt = alt;
+      picture.src = filename;
+
+      const overlay = document.getElementById('ruleOverlay');
+      if(overlay){
+        if(filename === RULE1_IMG || filename === RULE2_IMG || filename === RULE3_IMG){
+          overlay.classList.remove('hidden');
+        } else {
+          overlay.classList.add('hidden');
+        }
+      }
+    }
+
+    function showQuizFullscreen() {
+      hideMedia();
+      // Создаем iframe на весь экран
+      const iframe = document.createElement('iframe');
+      iframe.id = 'quizFullscreen';
+      iframe.style.cssText = `
+          position: fixed;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          border: none;
+          background: var(--bg1);
+          z-index: 9999;
+      `;
+      iframe.src = QUIZ_FILE;
+      iframe.title = 'Викторина';
+      document.body.appendChild(iframe);
+      
+      // Скрываем панель заданий
+      document.querySelector('.right').classList.add('hidden');
+    }
+
+    function closeQuizFullscreen() {
+      const iframe = document.getElementById('quizFullscreen');
+      if (iframe) {
+        iframe.remove();
+      }
+      document.querySelector('.right').classList.remove('hidden');
+    }
+
+    
+    function showTask2Fullscreen() {
+      hideMedia();
+      const iframe = document.createElement('iframe');
+      iframe.id = 'task2Fullscreen';
+      iframe.style.cssText = `
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        border: none;
+        background: var(--bg1);
+        z-index: 9999;
+      `;
+      iframe.src = TASK2_FILE;
+      iframe.title = 'Задание 2';
+      document.body.appendChild(iframe);
+      const right = document.querySelector('.right');
+      if (right) right.classList.add('hidden');
+    }
+
+    function closeTask2Fullscreen() {
+      const iframe = document.getElementById('task2Fullscreen');
+      if (iframe) iframe.remove();
+      const right = document.querySelector('.right');
+      if (right) right.classList.remove('hidden');
+    }
+
+    function showTask4Fullscreen() {
+      hideMedia();
+      const iframe = document.createElement('iframe');
+      iframe.id = 'task4Fullscreen';
+      iframe.style.cssText = `
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        border: none;
+        background: var(--bg1);
+        z-index: 9999;
+      `;
+      iframe.src = TASK4_FILE;
+      iframe.title = 'Задание 4';
+      document.body.appendChild(iframe);
+      const right = document.querySelector('.right');
+      if (right) right.classList.add('hidden');
+    }
+
+    function closeTask4Fullscreen() {
+      const iframe = document.getElementById('task4Fullscreen');
+      if (iframe) iframe.remove();
+      const right = document.querySelector('.right');
+      if (right) right.classList.remove('hidden');
+    }
+
+function showTask5Fullscreen() {
+      hideMedia();
+      const iframe = document.createElement('iframe');
+      iframe.id = 'task5Fullscreen';
+      iframe.style.cssText = `
+        position: fixed;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        border: none;
+        background: var(--bg1);
+        z-index: 9999;
+      `;
+      iframe.src = TASK5_FILE;
+      iframe.title = 'Задание 5';
+      document.body.appendChild(iframe);
+      const right = document.querySelector('.right');
+      if (right) right.classList.add('hidden');
+    }
+
+    function closeTask5Fullscreen() {
+      const iframe = document.getElementById('task5Fullscreen');
+      if (iframe) iframe.remove();
+      const right = document.querySelector('.right');
+      if (right) right.classList.remove('hidden');
+    }
+
+    function resetToIdle(){
+      state = ST.IDLE;
+      btnStart.disabled = false;
+      enableContinuePulse(false);
+      setBadge('Готово к старту');
+      panelTitle.textContent = 'Панель заданий';
+      panelDesc.textContent = 'Нажми «СТАРТ». После видео появится первое задание.';
+      showOnlyTask(null);
+      clearMsgs();
+
+      document.querySelectorAll('input[name="t1"]').forEach(i=> i.checked=false);
+      document.querySelectorAll('#t2Options input[type="checkbox"]').forEach(i=> i.checked=false);
+      document.querySelectorAll('input[name="t3"]').forEach(i=> i.checked=false);
+      document.querySelectorAll('#t4Options input[type="checkbox"]').forEach(i=> i.checked=false);
+      t5Sel1.value = '';
+      t5Sel2.value = '';
+
+      t6Tokens.forEach(t=>{
+        t.classList.remove('selected','good','bad');
+        t.dataset.selected = '0';
+      });
+
+      // Закрываем полноэкранные iframe если есть
+      closeQuizFullscreen();
+      closeTask2Fullscreen();
+      closeTask4Fullscreen();
+      closeTask5Fullscreen();
+      
+      // Восстанавливаем стандартный footerNote
+      const footerNote = document.getElementById('footerNote');
+      if (footerNote) {
+        footerNote.textContent = '';
+        footerNote.style.cssText = '';
+      }
+      
+      showWelcome();
+    }
+
+    function go(next){
+      clearMsgs();
+      state = next;
+      btnStart.disabled = true;
+      enableContinuePulse(false);
+
+      const footerNote = document.getElementById('footerNote');
+
+      switch(next){
+        case ST.IDLE:
+          resetToIdle();
+          break;
+
+        case ST.INTRO_VIDEO:
+          setBadge('Видео');
+          panelTitle.textContent = 'Смотри видео';
+          panelDesc.textContent = 'После видео появится первое задание.';
+          showOnlyTask(null);
+          playVideo(INTRO);
+          break;
+
+        case ST.TASK1:
+          setBadge('Задание');
+          panelTitle.textContent = 'Задание';
+          panelDesc.textContent = 'Выбери правильный вариант и нажми «ПРОВЕРИТЬ».';
+          showOnlyTask(task1);
+          hideMedia();
+          break;
+
+        case ST.RULE1:
+          setBadge('Правило');
+          panelTitle.textContent = 'Правило';
+          panelDesc.textContent = 'Посмотри правило и нажми «ПРОДОЛЖИТЬ».';
+          showOnlyTask(null);
+          showImage(RULE1_IMG, 'Правило 1');
+          enableContinuePulse(true);
+          btnStart.disabled = false;
+          break;
+
+        case ST.TASK2:
+          setBadge('Задание 2');
+          panelTitle.textContent = 'Задание 2';
+          panelDesc.textContent = 'Выполни задание и дождись автоматического перехода.';
+          showOnlyTask(null);
+          showTask2Fullscreen();
+          btnStart.disabled = false;
+          break;
+
+        case ST.VIDEO4:
+          setBadge('Видео');
+          panelTitle.textContent = 'Видео';
+          panelDesc.textContent = 'Смотри. Потом вернёмся к заданию.';
+          showOnlyTask(null);
+          playVideo(VIDEO4);
+          break;
+
+        case ST.VIDEO1:
+          setBadge('Видео');
+          panelTitle.textContent = 'Видео';
+          panelDesc.textContent = 'Смотри. Потом продолжим.';
+          showOnlyTask(null);
+          playVideo(AFTER_T1);
+          break;
+
+        case ST.TASK3:
+          setBadge('Задание');
+          panelTitle.textContent = 'Задание';
+          panelDesc.textContent = 'Выбери вариант и нажми «ПРОВЕРИТЬ».';
+          showOnlyTask(task3);
+          hideMedia();
+          break;
+
+        case ST.RULE2:
+          setBadge('Правило');
+          panelTitle.textContent = 'Правило';
+          panelDesc.textContent = 'Посмотри правило и нажми «ПРОДОЛЖИТЬ».';
+          showOnlyTask(null);
+          showImage(RULE2_IMG, 'Правило 2');
+          enableContinuePulse(true);
+          btnStart.disabled = false;
+          break;
+
+        case ST.TASK4:
+          setBadge('Задание 4');
+          panelTitle.textContent = 'Задание 4';
+          panelDesc.textContent = 'Выполни задание и дождись автоматического перехода.';
+          showOnlyTask(null);
+          showTask4Fullscreen();
+          btnStart.disabled = false;
+          break;
+
+        case ST.VIDEO2:
+          setBadge('Видео');
+          panelTitle.textContent = 'Видео';
+          panelDesc.textContent = 'Смотри. Потом финальное задание.';
+          showOnlyTask(null);
+          playVideo(VIDEO2);
+          break;
+
+        case ST.TASK5:
+          setBadge('Задание');
+          panelTitle.textContent = 'Задание 5';
+          panelDesc.textContent = 'Выполни задание и закрой экран, чтобы продолжить.';
+          showOnlyTask(null);
+          showTask5Fullscreen();
+          btnStart.disabled = false;
+          break;
+
+        case ST.RULE3:
+          setBadge('Правило');
+          panelTitle.textContent = 'Правило';
+          panelDesc.textContent = 'Посмотри правило и нажми «ПРОДОЛЖИТЬ».';
+          showOnlyTask(null);
+          showImage(RULE3_IMG, 'Правило 3');
+          enableContinuePulse(true);
+          btnStart.disabled = false;
+          break;
+
+        case ST.QUIZ:
+          setBadge('Задание 6');
+          panelTitle.textContent = 'Задание 6';
+          panelDesc.textContent = 'Внешнее задание. После завершения нажми "ПРОДОЛЖИТЬ".';
+          showOnlyTask(null);
+          showQuizFullscreen();
+          btnStart.disabled = false;
+          break;
+
+        case ST.FINAL:
+          setBadge('Финал');
+          panelTitle.textContent = 'Финал';
+          panelDesc.textContent = ''; // Пустая строка вместо текста о зацикленности
+          showOnlyTask(null);
+          
+          // Показываем правило 4 и финальное сообщение
+          if (footerNote) {
+            footerNote.innerHTML = `
+              <div style="margin-bottom: 20px; text-align: center;">
+                <img src="${RULE4_IMG}" alt="Правило: НАСЧЁТ / НА СЧЁТ" 
+                     style="max-width: 100%; border-radius: 12px; border: 1px solid rgba(102,217,255,.3);" />
+              </div>
+              <div style="text-align: center; padding: 20px 10px;">
+                <div style="font-size: 16px; font-weight: 700; color: var(--accent); margin-bottom: 8px;">
+                  КАК ВЫ ДУМАЕТЕ, КАКОЙ ПРЕДЛОГ БУДЕТ СЛЕДУЮЩИМ?
+                </div>
+                <div style="font-size: 12px; color: var(--muted);">
+                  Спасибо за сопровождение Платона в путешествии
+                </div>
+              </div>
+            `;
+            footerNote.classList.remove('hidden');
+          }
+          
+          playVideo(FINAL, true);
+          btnStart.disabled = false;
+          break;
+
+        case ST.FINAL_LOOP:
+          setBadge('Финал');
+          panelTitle.textContent = 'Финал';
+          panelDesc.textContent = ''; // Пустая строка
+          showOnlyTask(null);
+          
+          // Сохраняем правило 4 и финальное сообщение (если еще не установлено)
+          if (footerNote && !footerNote.innerHTML.includes('КАК ВЫ ДУМАЕТЕ')) {
+            footerNote.innerHTML = `
+              <div style="margin-bottom: 20px; text-align: center;">
+                <img src="${RULE4_IMG}" alt="Правило: НАСЧЁТ / НА СЧЁТ" 
+                     style="max-width: 100%; border-radius: 12px; border: 1px solid rgba(102,217,255,.3);" />
+              </div>
+              <div style="text-align: center; padding: 20px 10px;">
+                <div style="font-size: 16px; font-weight: 700; color: var(--accent); margin-bottom: 8px;">
+                  КАК ВЫ ДУМАЕТЕ, КАКОЙ ПРЕДЛОГ БУДЕТ СЛЕДУЮЩИМ?
+                </div>
+                <div style="font-size: 12px; color: var(--muted);">
+                  Спасибо за сопровождение Платона в путешествии
+                </div>
+              </div>
+            `;
+            footerNote.classList.remove('hidden');
+          }
+          
+          playVideo(FINAL, true);
+          btnStart.disabled = false;
+          break;
+      }
+    }
+
+    // ====== ПРОСМОТР ВИДЕО: автоматические переходы ======
+    player.addEventListener('ended', () => {
+      if(state === ST.INTRO_VIDEO) go(ST.TASK1);
+      else if(state === ST.VIDEO4) go(ST.TASK1);
+      else if(state === ST.VIDEO1) go(ST.TASK3);
+      else if(state === ST.VIDEO2) go(ST.TASK5);
+      // Для FINAL видео зациклено, поэтому ended не должен переключать состояние
+    });
+
+    // ====== КНОПКИ СТАРТ / ПРОДОЛЖИТЬ ======
+    btnStart.addEventListener('click', () => {
+      // В любом состоянии СТАРТ = перезапуск квеста
+      if(state !== ST.IDLE){
+        resetToIdle();
+      }
+      go(ST.INTRO_VIDEO);
+    });
+
+    btnContinue.addEventListener('click', () => {
+      if(btnContinue.disabled) return;
+
+      if(state === ST.RULE1) go(ST.TASK2);
+      else if(state === ST.RULE2) go(ST.TASK4);
+      else if(state === ST.RULE3) go(ST.QUIZ);
+      else if(state === ST.TASK1) go(ST.VIDEO1);
+      else if(state === ST.TASK2) go(ST.VIDEO4);
+      else if(state === ST.TASK3) go(ST.VIDEO2);
+      else if(state === ST.TASK4) go(ST.VIDEO2);
+      else if(state === ST.TASK5) go(ST.RULE3);
+      else if(state === ST.QUIZ) go(ST.FINAL);
+      else if(state === ST.FINAL || state === ST.FINAL_LOOP) {
+        go(ST.FINAL_LOOP);
+      }
+    });
+
+    // ====== ПРОВЕРКИ ЗАДАНИЙ ======
+
+    // TASK1: правильный ответ 2
+    t1Check.addEventListener('click', () => {
+      const sel = document.querySelector('input[name="t1"]:checked');
+      if(!sel){
+        t1Msg.className = 'msg bad';
+        t1Msg.textContent = 'Выбери вариант 🙂';
+        return;
+      }
+      if(sel.value === '2'){
+        t1Msg.className = 'msg good';
+        t1Msg.textContent = '✅ Верно! Это предлог: «насчёт».';
+        enableContinuePulse(true);
+        btnStart.disabled = false;
+        state = ST.TASK1;
+      } else {
+        t1Msg.className = 'msg bad';
+        t1Msg.textContent = '❌ Ошибка. Сначала правило.';
+        go(ST.RULE1);
+      }
+    });
+
+    // TASK2: предлог = 1 и 3
+    t2Check.addEventListener('click', () => {
+      const checks = [...document.querySelectorAll('#t2Options input[type="checkbox"]')];
+      const chosen = checks.filter(c=>c.checked).map(c=>c.value).sort().join(',');
+      const correct = '1,3';
+      if(chosen === correct){
+        t2Msg.className = 'msg good';
+        t2Msg.textContent = '✅ Отлично!';
+        enableContinuePulse(true);
+        btnStart.disabled = false;
+        state = ST.TASK2;
+      } else {
+        t2Msg.className = 'msg bad';
+        t2Msg.textContent = '❌ Не совсем. Подумай: где можно заменить на «о/об, по поводу».';
+      }
+    });
+
+    // TASK3: правильный ответ 1
+    t3Check.addEventListener('click', () => {
+      const sel = document.querySelector('input[name="t3"]:checked');
+      if(!sel){
+        t3Msg.className = 'msg bad';
+        t3Msg.textContent = 'Выбери вариант 🙂';
+        return;
+      }
+      if(sel.value === '1'){
+        t3Msg.className = 'msg good';
+        t3Msg.textContent = '✅ Верно: «на счёт» — существительное с предлогом.';
+        enableContinuePulse(true);
+        btnStart.disabled = false;
+        state = ST.TASK3;
+      } else {
+        t3Msg.className = 'msg bad';
+        t3Msg.textContent = '❌ Ошибка. Сначала правило.';
+        go(ST.RULE2);
+      }
+    });
+
+    // TASK4: существительное с предлогом = 1 и 3
+    t4Check.addEventListener('click', () => {
+      const checks = [...document.querySelectorAll('#t4Options input[type="checkbox"]')];
+      const chosen = checks.filter(c=>c.checked).map(c=>c.value).sort().join(',');
+      const correct = '1,3';
+      if(chosen === correct){
+        t4Msg.className = 'msg good';
+        t4Msg.textContent = '✅ Молодец!';
+        enableContinuePulse(true);
+        btnStart.disabled = false;
+        state = ST.TASK4;
+      } else {
+        t4Msg.className = 'msg bad';
+        t4Msg.textContent = '❌ Не совсем. Существительное — «на что?».';
+      }
+    });
+
+    // TASK5: 1) существительное (noun), 2) предлог (prep)
+    t5Check.addEventListener('click', () => {
+      if(!t5Sel1.value || !t5Sel2.value){
+        t5Msg.className = 'msg bad';
+        t5Msg.textContent = 'Выбери оба варианта 🙂';
+        return;
+      }
+      const ok = (t5Sel1.value === 'ger') && (t5Sel2.value === 'prep');
+      if(ok){
+        t5Msg.className = 'msg good';
+        t5Msg.textContent = '✅ Супер! 1) «на счёт» — существительное с предлогом (раздельно), 2) «насчёт» — предлог (слитно).';
+        enableContinuePulse(true);
+        btnStart.disabled = false;
+        state = ST.TASK5;
+      } else {
+        t5Msg.className = 'msg bad';
+        t5Msg.textContent = '❌ Ошибка. Сначала правило.';
+        go(ST.RULE3);
+      }
+    });
+
+    // TASK6: клики по токенам (резервное задание)
+    t6Tokens.forEach(t => {
+      t.addEventListener('click', () => {
+        const on = t.dataset.selected === '1';
+        t.dataset.selected = on ? '0' : '1';
+        t.classList.toggle('selected', !on);
+      });
+    });
+
+    t6Check.addEventListener('click', () => {
+      let ok = true;
+      t6Tokens.forEach(t => {
+        const selected = t.dataset.selected === '1';
+        const correct = t.dataset.correct === '1';
+        t.classList.remove('good','bad');
+        if(selected){
+          if(correct) t.classList.add('good');
+          else { t.classList.add('bad'); ok = false; }
+        } else {
+          if(correct) ok = false;
+        }
+      });
+
+      if(ok){
+        t6Msg.className = 'msg good';
+        t6Msg.textContent = '✅ Верно!';
+        enableContinuePulse(true);
+        btnStart.disabled = false;
+        state = ST.TASK6;
+      } else {
+        t6Msg.className = 'msg bad';
+        t6Msg.textContent = '❌ Есть ошибки. Выбирай только «насчёт» = «о/об чём-то, по поводу чего-то». Попробуй ещё раз.';
+      }
+    });
+
+    // Обработчик сообщений от iframe
+    window.addEventListener('message', (event) => {
+      if (!event.data || !event.data.type) return;
+
+            const t = event.data.type;
+
+      // ====== СИГНАЛЫ ИЗ ПОЛНОЭКРАННЫХ ЗАДАНИЙ (iframe) ======
+      // Поддерживаем разные варианты названий, чтобы копии задания5 могли работать без правок:
+      // 'TASK2_COMPLETED', 'TASK4_COMPLETED', 'TASK5_COMPLETED' и универсальный 'TASK_COMPLETED'.
+      if (t === 'TASK2_COMPLETED' || t === 'TASK4_COMPLETED' || t === 'TASK5_COMPLETED' || t === 'TASK_COMPLETED') {
+        // Если задание 2 (после RULE1) завершено → сразу видео4 → потом возврат к заданию 1
+        if (state === ST.TASK2) {
+          closeTask2Fullscreen();
+          go(ST.VIDEO4);
+          return;
+        }
+
+        // Если задание 4 (после RULE2) завершено → сразу video2 → дальше кульминация (задание 5)
+        if (state === ST.TASK4) {
+          closeTask4Fullscreen();
+          go(ST.VIDEO2);
+          return;
+        }
+
+        // Иначе считаем, что завершено задание 5 → сразу правило 3 (без «пустого кадра»)
+        closeTask5Fullscreen();
+        go(ST.RULE3);
+        return;
+      } else if (t === 'QUIZ_COMPLETED') {
+
+        // Задание 6 завершено, переходим на финал
+        const iframe = document.getElementById('quizFullscreen');
+        if (iframe) {
+          iframe.remove();
+        }
+        document.querySelector('.right').classList.remove('hidden');
+        
+        // Идем на финальное видео
+        go(ST.FINAL);
+      } else if (event.data.type === 'QUIZ_CLOSED') {
+        // Пользователь закрыл задание (не используется сейчас)
+        enableContinuePulse(true);
+      }
+    });
+
+    // Стартовое состояние
+    resetToIdle();
+  </script>
+</body>
+</html>
