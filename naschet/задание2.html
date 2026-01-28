@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Самозванцы на борту — НАСЧЁТ / НА СЧЁТ</title>
+  <style>
+    :root{
+      --bg1:#060816;
+      --bg2:#0b1233;
+      --glass: rgba(255,255,255,.08);
+      --stroke: rgba(255,255,255,.16);
+      --text:#eef2ff;
+      --muted: rgba(238,242,255,.7);
+      --good:#68ffb0;
+      --warn:#ffd36b;
+      --bad:#ff5c7a;
+      --cyan:#5ad6ff;
+      --violet:#b58bff;
+      --shadow: 0 18px 60px rgba(0,0,0,.45);
+      --radius: 18px;
+    }
+
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      color:var(--text);
+      font: 16px/1.35 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      background:
+        radial-gradient(1100px 700px at 20% 15%, rgba(90,214,255,.16), transparent 55%),
+        radial-gradient(900px 600px at 85% 25%, rgba(181,139,255,.18), transparent 60%),
+        radial-gradient(700px 500px at 60% 90%, rgba(104,255,176,.10), transparent 55%),
+        linear-gradient(160deg, var(--bg1), var(--bg2));
+      min-height:100vh;
+      overflow-x:hidden;
+    }
+
+    .stars, .stars:before, .stars:after{
+      position:fixed; inset:0;
+      background-image:
+        radial-gradient(2px 2px at 20px 30px, rgba(255,255,255,.8), transparent 50%),
+        radial-gradient(1px 1px at 130px 80px, rgba(255,255,255,.7), transparent 55%),
+        radial-gradient(1px 1px at 220px 150px, rgba(255,255,255,.6), transparent 55%),
+        radial-gradient(2px 2px at 340px 120px, rgba(255,255,255,.55), transparent 55%),
+        radial-gradient(1px 1px at 420px 220px, rgba(255,255,255,.7), transparent 55%),
+        radial-gradient(1px 1px at 560px 90px, rgba(255,255,255,.55), transparent 55%),
+        radial-gradient(2px 2px at 680px 210px, rgba(255,255,255,.6), transparent 55%),
+        radial-gradient(1px 1px at 760px 140px, rgba(255,255,255,.6), transparent 55%),
+        radial-gradient(1px 1px at 880px 60px, rgba(255,255,255,.5), transparent 55%),
+        radial-gradient(2px 2px at 980px 240px, rgba(255,255,255,.55), transparent 55%);
+      background-size: 1000px 280px;
+      opacity:.6;
+      pointer-events:none;
+      animation: drift 18s linear infinite;
+    }
+    .stars:before{ content:""; opacity:.35; animation-duration:28s; }
+    .stars:after{ content:""; opacity:.18; animation-duration:44s; }
+    @keyframes drift{ from{transform:translateY(0)} to{transform:translateY(280px)} }
+
+    .wrap{ max-width:1100px; margin:0 auto; padding:28px 16px 40px; }
+
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.10), rgba(255,255,255,.05));
+      border:1px solid var(--stroke);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+    }
+
+    header{ display:flex; justify-content:space-between; gap:16px; margin-bottom:18px; }
+    h1{ margin:0; font-size:22px; }
+    .subtitle{ color:var(--muted); max-width:70ch; }
+
+    .grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+    @media(max-width:900px){ .grid{grid-template-columns:1fr} }
+
+    .panel{ padding:14px; min-height:360px; display:flex; flex-direction:column; }
+    .panelHead{ display:flex; justify-content:space-between; align-items:center; }
+    .panelTitle{ font-weight:700; }
+    .badge{ font-size:12px; padding:4px 8px; border-radius:999px; border:1px solid var(--stroke); }
+
+    .list{ flex:1; display:flex; flex-direction:column; gap:10px; margin-top:10px; }
+
+    .item{
+      padding:12px; border-radius:14px; border:1px solid rgba(255,255,255,.14);
+      background: rgba(10,12,28,.32);
+    }
+    .item.errorBay{ border-color: rgba(255,92,122,.35); background: rgba(255,92,122,.10); }
+
+    .meta{ font-size:12px; color:var(--muted); margin-top:6px; display:flex; gap:6px; }
+    .pill{ padding:3px 7px; border-radius:999px; border:1px solid var(--stroke); font-size:11px; }
+    .pill.red{ border-color: rgba(255,92,122,.35); }
+
+    .card-actions{ margin-top:8px; }
+    button{ padding:8px 12px; border-radius:12px; border:1px solid var(--stroke); background:rgba(255,255,255,.08); color:var(--text); cursor:pointer; }
+    button.primary{ border-color: rgba(90,214,255,.3); }
+    button.danger{ border-color: rgba(255,92,122,.3); }
+    button.success{ display:none; border-color: rgba(104,255,176,.3); }
+
+    .controls{ margin-top:14px; display:flex; gap:10px; flex-wrap:wrap; }
+    .status{ padding:10px 12px; border-radius:14px; border:1px solid var(--stroke); }
+    .status.good{ border-color: rgba(104,255,176,.3); }
+    .status.bad{ border-color: rgba(255,92,122,.3); }
+    .status.warn{ border-color: rgba(255,211,107,.3); }
+  </style>
+</head>
+<body>
+  <div class="stars"></div>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>🛸 «Самозванцы на борту» — НАСЧЁТ / НА СЧЁТ</h1>
+        <div class="subtitle">Найди записи с ошибкой и отправь их в аварийный отсек.</div>
+      </div>
+    </header>
+
+    <section class="grid">
+      <div class="panel card">
+        <div class="panelHead"><div class="panelTitle">🟦 Навигационные записи <span class="badge" id="navCount"></span></div></div>
+        <div class="list" id="navList"></div>
+      </div>
+      <div class="panel card">
+        <div class="panelHead"><div class="panelTitle">🟥 Аварийный отсек <span class="badge" id="errCount"></span></div></div>
+        <div class="list" id="errList"></div>
+      </div>
+    </section>
+
+    <section class="controls">
+      <button class="primary" id="checkBtn">ПРОВЕРИТЬ</button>
+      <button id="resetBtn">СБРОС</button>
+      <button class="danger" id="shuffleBtn">ПЕРЕМЕШАТЬ</button>
+      <button class="success" id="nextBtn">ПРОДОЛЖИТЬ 🚀</button>
+      <div class="status" id="statusBox">Готово к проверке.</div>
+    </section>
+  </div>
+
+<script>
+const tasks=[{
+  story_ok:"Самозванцы обезврежены!",
+  story_fail:"Проверь ещё раз.",
+  items:[
+    {text:"Вы можете перевести сдачу на счёт благотворительного фонда космофлота.",isImpostor:false},
+    {text:"Я хотел поговорить на счёт оплаты твоей доли за ремонт дроида.",isImpostor:true},
+    {text:"Как насчёт внеплановой проверки герметичности правого шлюза?.",isImpostor:false},
+    {text:"Сумма за межгалактический роуминг была переведена прямо насчёт абонента",isImpostor:true},
+    {text:"Крипто-кредиты за топливо поступят на счёт станции в течение часа.",isImpostor:false},
+    {text:"Андроид долго размышлял на счёт смысла существования углеродных форм жизни.",isImpostor:true}
+  ]
+}];
+
+let itemsState=[];
+const navList=document.getElementById('navList');
+const errList=document.getElementById('errList');
+const navCount=document.getElementById('navCount');
+const errCount=document.getElementById('errCount');
+const statusBox=document.getElementById('statusBox');
+
+function uid(){return Math.random().toString(16).slice(2)}
+
+function load(){
+  itemsState=tasks[0].items.map(it=>({...it,id:uid(),where:'nav'}));
+  render();
+}
+
+function renderItem(x){
+  const d=document.createElement('div');
+  d.className='item'+(x.where==='err'?' errorBay':'');
+  d.innerHTML=`<div>${x.text}</div><div class="card-actions"><button>${x.where==='nav'?'ПЕРЕМЕСТИТЬ':'ОСТАВИТЬ'}</button></div>`;
+  d.querySelector('button').onclick=()=>toggle(x.id);
+  return d;
+}
+
+function render(){
+  navList.innerHTML=''; errList.innerHTML='';
+  itemsState.forEach(x=>{
+    (x.where==='nav'?navList:errList).appendChild(renderItem(x));
+  });
+  navCount.textContent=itemsState.filter(x=>x.where==='nav').length;
+  errCount.textContent=itemsState.filter(x=>x.where==='err').length;
+}
+
+function toggle(id){
+  const x=itemsState.find(i=>i.id===id);
+  x.where=x.where==='nav'?'err':'nav';
+  render();
+}
+
+document.getElementById('checkBtn').onclick=()=>{
+  const wrong=itemsState.filter(x=>x.isImpostor&&x.where!=='err');
+  const extra=itemsState.filter(x=>!x.isImpostor&&x.where==='err');
+  if(!wrong.length&&!extra.length){statusBox.textContent='✅ Верно!';statusBox.className='status good'
+  try {
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({ type: 'TASK5_COMPLETED' }, '*');
+    }
+  } catch(e) {}
+}
+  else{statusBox.textContent='⚠️ Есть ошибки';statusBox.className='status bad'}
+};
+
+document.getElementById('resetBtn').onclick=load;
+document.getElementById('shuffleBtn').onclick=()=>{itemsState.sort(()=>Math.random()-.5);render()};
+
+load();
+</script>
+</body>
+</html>
