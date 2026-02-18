@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Лианта: Орфографический Полет</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #00020a; font-family: 'Segoe UI', sans-serif; }
+        canvas { display: block; }
+        #ui { position: absolute; top: 15px; left: 15px; color: #00f2fe; pointer-events: auto; text-shadow: 2px 2px 4px #000; z-index: 10; }
+        #question-box { 
+            font-size: 24px; 
+            background: rgba(0, 15, 30, 0.9); 
+            padding: 20px; 
+            border: 2px solid #00f2fe;
+            border-radius: 12px;
+            max-width: 800px;
+            margin-top: 10px;
+            line-height: 1.4;
+            pointer-events: auto; /* Чтобы можно было кликать на ползунок */
+        }
+        #score { transition: color 0.3s; font-size: 32px; margin-bottom: 5px; }
+        .controls { margin-top: 15px; font-size: 18px; color: #fff; }
+        input[type=range] { width: 200px; cursor: pointer; vertical-align: middle; }
+    </style>
+</head>
+<body>
+    <div id="ui">
+        <h2 id="score">Топливо: 0%</h2>
+        <div id="question-box">
+            <div id="text-target">Запуск систем...</div>
+            <div class="controls">
+                Скорость полета: 
+                <input type="range" id="speedRange" min="0.1" max="3" step="0.1" value="1">
+                <span id="speedVal">1x</span>
+            </div>
+        </div>
+    </div>
+    <canvas id="gameCanvas"></canvas>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const scoreEl = document.getElementById('score');
+const qBoxText = document.getElementById('text-target');
+const speedInput = document.getElementById('speedRange');
+const speedDisplay = document.getElementById('speedVal');
+
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+let speedMultiplier = 1;
+
+// Слушатель для ползунка
+speedInput.addEventListener('input', (e) => {
+    speedMultiplier = parseFloat(e.target.value);
+    speedDisplay.innerText = speedMultiplier + "x";
+});
+
+const data = [
+    { q: "... опасной близости к чёрной дыре курс сбился", options: ["Вследствие", "В следствии", "В следствие"], correct: 0 },
+    { q: "Внести новые данные ... по делу о пыли", options: ["вследствие", "в следствии", "в следствие"], correct: 2 },
+    { q: "Ошибки, допущенные ..., повлияли на приговор", options: ["вследствие", "в следствии", "в следствие"], correct: 1 },
+    { q: "Нам ... долго напоминали об этом просчёте", options: ["Впоследствие", "В последствии", "Впоследствии"], correct: 2 },
+    { q: "Движение было затруднено  ... сильного звездопада", options: ["вследствие", "в следствии", "в следствие"], correct: 0 },
+    { q: "Капитан выразил благодарность космическим грамотеям ... своей речи", options: ["в заключении", "в заключение", "взаключение"], correct: 1 },
+    { q: "Инопланетный принц томился ... на Луне", options: ["в заключение", "в заключении", "взаключении"], correct: 1 },
+    { q: "И только... мы узнаем, что повесть  основана на реальныз событиях", options: ["В заключении", "В заключение", "Взаключение"], correct: 0 },
+    { q: "... ужина робот-повар исполнил гимн", options: ["В заключении", "В заключение", "Взаключение"], correct: 1 },
+    { q: "Пират находился ... до суда", options: ["в заключение", "в заключении", "взаключении"], correct: 1 },
+    { q: "... метеоритного дождя корпус поврежден", options: ["Вследствие", "В следствии", "В следствие"], correct: 0 },
+    { q: "К делу о похитителе луноходов ... потеряли интерес", options: ["впоследствие", "впоследствии", "в последствии"], correct: 1 },
+    { q: "Космические лягушки добавили ... ложные улики", options: ["вследствие", "в следствии", "в следствие"], correct: 2 },
+    { q: "Сбой произошел ... несовместимости агрегатов", options: ["вследствие", "в следствии", "в следствие"], correct: 0 },
+    { q: "Пираты рассчитывали на пересмотр решения ...", options: ["в последствии", "впоследствии", "впоследствие"], correct: 1 },
+    { q: "О том, что будет продолжение, написано ...", options: ["В заключении", "В заключение", "Взаключение"], correct: 0 },
+    { q: "Упомянуть о координатах ... доклада", options: ["в заключении", "в заключение", "взаключение"], correct: 1 },
+    { q: "Находясь..., он продолжал писать свои мемуары", options: ["в заключение", "в заключении", "взаключении"], correct: 1 },
+    { q: "... выступления адмирал поблагодарил всех", options: ["В заключении", "В заключение", "Взаключение"], correct: 1 },
+    { q: "Корабль оказался ... среди льдов", options: ["в заключение", "в заключении", "взаключении"], correct: 1 }
+];
+
+let currentIdx = 0;
+let fuel = 0;
+let spheres = [];
+let isGameOver = false;
+
+let stars = Array(200).fill().map(() => ({ 
+    x: Math.random()*canvas.width, 
+    y: Math.random()*canvas.height, 
+    size: Math.random() * 2 + 1, 
+    baseSpeed: Math.random() * 2 + 0.5 
+}));
+
+class Sphere {
+    constructor(text, isCorrect, x) {
+        this.text = text;
+        this.isCorrect = isCorrect;
+        this.x = x;
+        this.y = -100 - (Math.random() * 200);
+        this.radius = 80;
+        this.baseSpeed = 0.5 + Math.random() * 0.4;
+    }
+    update() {
+        if (!isGameOver) {
+            // Умножаем базовую скорость на значение ползунка
+            this.y += this.baseSpeed * speedMultiplier;
+        }
+        if (this.y > canvas.height + this.radius) {
+            this.y = -this.radius; 
+        }
+    }
+    draw() {
+        ctx.save();
+        ctx.beginPath();
+        let grad = ctx.createRadialGradient(this.x - 20, this.y - 20, 5, this.x, this.y, this.radius);
+        grad.addColorStop(0, '#ffffff');
+        grad.addColorStop(0.3, '#00f2fe');
+        grad.addColorStop(1, '#0575e6');
+        ctx.fillStyle = grad;
+        ctx.shadowBlur = 25;
+        ctx.shadowColor = "#00f2fe";
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = "#001a33"; 
+        ctx.font = "bold 24px Arial"; 
+        ctx.textAlign = "center";
+        ctx.fillText(this.text, this.x, this.y + 10);
+        ctx.restore();
+    }
+}
+
+function initLevel() {
+    if (currentIdx >= data.length) {
+        isGameOver = true;
+        qBoxText.innerHTML = "<span style='color:#00ff00'>МИССИЯ ВЫПОЛНЕНА! ТОПЛИВА ХВАТИТ ДЛЯ ПОЛЁТА!</span>";
+      // Кнопка ВПЕРЁД (появляется в центре)
+      var btn = document.createElement('button');
+      btn.textContent = 'ВПЕРЁД';
+      btn.id = 'btnForward';
+      btn.style.marginTop = '18px';
+      btn.style.padding = '14px 26px';
+      btn.style.borderRadius = '999px';
+      btn.style.border = '2px solid #66d9ff';
+      btn.style.background = 'rgba(0,0,0,0.25)';
+      btn.style.color = 'white';
+      btn.style.fontWeight = '800';
+      btn.style.fontSize = '18px';
+      btn.style.cursor = 'pointer';
+      btn.style.pointerEvents = 'auto';
+      btn.style.position = 'relative';
+      btn.style.zIndex = '9999';
+      btn.style.boxShadow = '0 0 18px rgba(102,217,255,0.25)';
+      btn.addEventListener('click', function(){
+        try{ window.parent.postMessage('TOPLIVO_DONE','*'); }catch(e){}
+      });
+      qBoxText.appendChild(document.createElement('br'));
+      qBoxText.appendChild(btn);
+spheres = [];
+        return;
+    }
+    qBoxText.innerText = `Цель №${currentIdx + 1}: ${data[currentIdx].q}`;
+    const sector = canvas.width / 4;
+    spheres = data[currentIdx].options.map((opt, i) => 
+        new Sphere(opt, i === data[currentIdx].correct, sector * (i + 1))
+    );
+}
+
+canvas.addEventListener('mousedown', (e) => {
+    if (isGameOver) return;
+    spheres.forEach((s) => {
+        const dist = Math.hypot(e.clientX - s.x, e.clientY - s.y);
+        if (dist < s.radius) {
+            if (s.isCorrect) {
+                fuel += 5;
+                scoreEl.style.color = "#00f2fe"; 
+                updateUI();
+                currentIdx++;
+                initLevel();
+            } else {
+                fuel -= 10;
+                scoreEl.style.color = "#ff4d4d"; 
+                updateUI();
+                document.body.style.backgroundColor = "#400";
+                setTimeout(() => document.body.style.backgroundColor = "#00020a", 100);
+                if (fuel < 0) {
+                    isGameOver = true;
+                    qBoxText.innerHTML = "<span style='color:#ff4d4d'>ТОПЛИВО НА НУЛЕ! Корабль заглох.</span>";
+                }
+            }
+        }
+    });
+});
+
+function updateUI() {
+    scoreEl.innerText = `Топливо: ${fuel}%`;
+}
+
+function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "rgba(255, 255, 255, 0.8)";
+    stars.forEach(st => {
+        // Звезды тоже реагируют на ползунок!
+        st.y += st.baseSpeed * speedMultiplier;
+        if(st.y > canvas.height) {
+            st.y = -5;
+            st.x = Math.random() * canvas.width;
+        }
+        ctx.beginPath();
+        ctx.arc(st.x, st.y, st.size, 0, Math.PI * 2);
+        ctx.fill();
+    });
+    spheres.forEach(s => {
+        s.update();
+        s.draw();
+    });
+    requestAnimationFrame(animate);
+}
+
+window.addEventListener('resize', () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    initLevel();
+});
+
+initLevel();
+animate();
+</script>
+</body>
+</html>
