@@ -1,0 +1,472 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Ремонтируем окно Платона</title>
+
+<style>
+:root{
+  --bg0:#050b18;
+  --bg1:#07122b;
+  --panel: rgba(255,255,255,.06);
+  --panel2: rgba(20,35,70,.55);
+  --stroke: rgba(255,255,255,.10);
+  --muted: rgba(255,255,255,.78);
+  --text: rgba(255,255,255,.96);
+  --good:#1e8e4a;
+  --bad:#d64545;
+  --radius:18px;
+  --shadow:0 18px 60px rgba(0,0,0,.55);
+}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  background:radial-gradient(1200px 800px at 50% 10%,#0a1b44 0%,var(--bg1) 35%,var(--bg0) 100%);
+  color:var(--text);
+  overflow-x:hidden;
+}
+
+/* ===== ЗВЁЗДНЫЙ ФОН ===== */
+#stars{
+  position:fixed;
+  inset:0;
+  z-index:0;
+  pointer-events:none;
+}
+
+.wrap{
+  position:relative;
+  z-index:1;
+  max-width:1050px;
+  margin:18px auto;
+  padding:10px 14px 22px;
+}
+
+.mission{
+  text-align:center;
+  font-size:24px;
+  font-weight:800;
+  letter-spacing:.7px;
+  color:var(--muted);
+  margin-bottom:14px;
+}
+
+.panel{
+  background:var(--panel);
+  border:1px solid var(--stroke);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:18px;
+  backdrop-filter:blur(6px);
+}
+
+.windowFrame{
+  aspect-ratio:16/9;
+  position:relative;
+  border-radius:20px;
+  overflow:hidden;
+  background:rgba(0,0,0,.25);
+}
+
+.layer{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+  object-fit:contain;
+}
+
+.frag{
+  opacity:0;
+  transition:.25s ease;
+}
+.frag.on{opacity:1}
+
+.hud{
+  display:flex;
+  justify-content:center;
+  gap:14px;
+  margin:14px 0;
+  flex-wrap:wrap;
+}
+
+.pill{
+  padding:8px 14px;
+  border-radius:999px;
+  background:rgba(0,0,0,.25);
+  border:1px solid rgba(255,255,255,.1);
+  font-weight:900;
+  letter-spacing:.5px;
+}
+
+.question{
+  text-align:center;
+  font-size:28px;
+  font-weight:950;
+  letter-spacing:.9px;
+  line-height:1.42;
+  background:var(--panel2);
+  padding:18px;
+  border-radius:14px;
+}
+
+.answers{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:14px;
+  margin-top:14px;
+}
+@media(max-width:720px){
+  .answers{grid-template-columns:1fr}
+}
+
+.answerBtn{
+  border:none;
+  border-radius:14px;
+  padding:14px 14px;
+  font-size:20px;
+  font-weight:900;
+  letter-spacing:.6px;         /* ← разборчивее */
+  cursor:pointer;
+  color:white;
+  background:linear-gradient(180deg,#2a4fa8,#1c356f);
+  box-shadow:0 10px 25px rgba(0,0,0,.25);
+}
+.answerBtn.good{background:linear-gradient(180deg,#2ea965,#1f7d4c)}
+.answerBtn.bad{background:linear-gradient(180deg,#d64545,#9c2c2c)}
+.answerBtn:disabled{opacity:.78;cursor:default}
+
+.statusBig{
+  margin:14px 0;
+  text-align:center;
+  font-size:30px;
+  font-weight:950;
+}
+
+.footerRow{text-align:center}
+.goNext{
+  appearance:none;
+  border:1px solid rgba(120,220,255,.55);
+  background:rgba(10,40,70,.55);
+  color:#eaf8ff;
+  font-weight:800;
+  letter-spacing:.04em;
+  padding:14px 22px;
+  border-radius:16px;
+  cursor:pointer;
+  box-shadow:0 10px 24px rgba(0,0,0,.25);
+  transition:transform .12s ease, box-shadow .12s ease, background .12s ease;
+}
+.goNext:hover{ transform: translateY(-1px); box-shadow:0 14px 30px rgba(0,0,0,.28); background:rgba(10,55,95,.62);}
+.goNext:active{ transform: translateY(0px) scale(.99);}
+
+.playAgain{
+  font-size:22px;
+  padding:16px 20px;
+  border-radius:16px;
+  border:none;
+  cursor:pointer;
+  background:linear-gradient(180deg,#2ea965,#1f7d4c);
+  color:white;
+  font-weight:950;
+}
+
+.nextBtn{
+  font-size:22px;
+  padding:16px 22px;
+  border-radius:16px;
+  border:none;
+  cursor:pointer;
+  background:linear-gradient(180deg,#2b7be0,#1956a8);
+  color:white;
+  font-weight:950;
+  margin-left:14px;
+}
+.nextBtn:disabled{opacity:.55;cursor:not-allowed;}
+
+.hidden{display:none}
+</style>
+</head>
+
+<body>
+<canvas id="stars"></canvas>
+
+<div class="wrap">
+  <div class="mission">Помоги восстановить разбитое витражное окно в корабле Платона</div>
+
+  <div class="panel">
+    <div class="windowFrame">
+      <!-- каркас снизу -->
+      <img class="layer" src="каркас.png" alt="каркас">
+      <!-- 16 фрагментов (все одинакового размера, как в фотошопе) -->
+      <script>
+        for(let i=1;i<=16;i++){
+          document.write(`<img class="layer frag" data-i="${i-1}" src="${i}.png" alt="fragment ${i}">`);
+        }
+      </script>
+    </div>
+
+    <div class="hud">
+      <div class="pill" id="fragInfo">Фрагменты: 0 / 16</div>
+      <div class="pill" id="qInfo">Вопрос: 1</div>
+    </div>
+
+    <div id="game">
+      <div class="question" id="question"></div>
+      <div class="answers">
+        <button class="answerBtn" id="a"></button>
+        <button class="answerBtn" id="b"></button>
+      </div>
+    </div>
+
+    <div id="finish" class="hidden">
+      <div class="statusBig">
+        Готово! Окно восстановлено ✨<br>
+        <span id="mistakeText"></span>
+      </div>
+      <div class="footerRow">
+        <button class="playAgain" onclick="start()">Сыграть заново</button>
+        <button id="btnNextQuest" class="nextBtn hidden" onclick="goNext()">ЛЕТИМ ДАЛЬШЕ</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ===== ЗВЁЗДЫ ===== */
+const c=document.getElementById("stars"),ctx=c.getContext("2d");
+function resize(){ c.width=innerWidth; c.height=innerHeight; }
+addEventListener("resize",resize); resize();
+
+let stars=Array.from({length:200},()=>({
+  x:Math.random()*c.width,
+  y:Math.random()*c.height,
+  r:Math.random()*1.35+.25,
+  s:0.08+Math.random()*0.25,
+  p:Math.random()*Math.PI*2
+}));
+
+function draw(){
+  ctx.clearRect(0,0,c.width,c.height);
+  for(let s of stars){
+    s.y+=s.s; if(s.y>c.height) s.y=0;
+    s.p += 0.01;
+    const tw = 0.45 + 0.55*Math.sin(Date.now()/800 + s.p);
+    ctx.fillStyle=`rgba(255,255,255,${tw})`;
+    ctx.beginPath(); ctx.arc(s.x,s.y,s.r,0,Math.PI*2); ctx.fill();
+  }
+  requestAnimationFrame(draw);
+}
+draw();
+
+/* ===== ВОПРОСЫ =====
+   ВАЖНО: тут много — чтобы НЕ крутилось одно и то же.
+   c = правильный вариант, w = неправильный.
+*/
+const Q = [
+  // === ВРОДЕ / В РОДЕ ===
+  { q:'Предлог  ВРОДЕ',
+    c:'На вкус ягода была в/роде земляники.',
+    w:'Предания, хранившиеся в/роде годами, были связаны с космосом.' },
+  { q:'Существительное  В РОДЕ',
+    c:'В/роде кошачьих много видов.',
+    w:'Он купил шляпу в/роде той, что носил его дед.' },
+  { q:'Предлог  ВРОДЕ',
+    c:'Ему подарили инструмент в/роде старинной лютни.',
+    w:'Быть первым в/роде, кто полетел в космос.' },
+  { q:'Существительное  В РОДЕ',
+    c:'Изменения происходят в/роде человеческом.',
+    w:'Выражение в/роде этого мы уже слышали.' },
+
+  // === НАСЧЁТ / НА СЧЁТ ===
+  { q:'Предлог  НАСЧЁТ',
+    c:'Пошутить на/счёт нового увлечения Грэма.',
+    w:'Ошибка в цифрах повлияла на/счёт в пользу соперника. ' },
+  { q:'Предлог  НАСЧЁТ',
+    c:'Распорядиться на/счёт подготовки к празднику. ',
+    w:'Ещё три очка записали на/счёт команды.' },
+  { q:'Предлог  НАСЧЁТ',
+    c:'Я хотел поговорить на/счёт оплаты.',
+    w:'Перевод поступил на/счёт вовремя.' },
+  { q:'Существительное  НА СЧЁТ',
+    c:'Прыгаем вместе на/счёт три',
+    w:'Все в семье подумывали на/счёт переезда в город.' },
+
+  // === НЕСМОТРЯ / НЕ СМОТРЯ ===
+  { q:'Предлог  НЕСМОТРЯ НА',
+    c:'Не/смотря на дождь, мы пошли гулять.',
+    w:'Она отвечала на вопросы, не/смотря на собеседника. ' },
+  { q:'Деепричастие  НЕ СМОТРЯ НА',
+    c:'Он протянул руку, не/смотря на книгу, которую брал.',
+    w:'Корабль шёл прежним курсом не/смотря на шторм.' },
+  { q:'Предлог  НЕСМОТРЯ НА',
+    c:'Платон сам оплатил счёт, не/смотря на возражение коллеги.',
+    w:'Просидел весь урок, не/смотря на доску.' },
+  { q:'Предлог  НЕСМОТРЯ НА',
+    c:'Команда победила не/смотря на отсутствие лидера.',
+    w:'Даже не/смотря на табло, она знала счёт.' },
+
+  // === НЕВЗИРАЯ / НЕ ВЗИРАЯ ===
+  { q:'Как  правильно?',
+    c:'Невзирая на трудности, мы справились.',
+    w:'Не взирая на трудности, мы справились.' },
+  { q:'Предлог НЕВЗИРАЯ НА',
+    c:'Критиковать, не/взирая на лица, — значит быть объективным.',
+    w:'Он продолжал говорить, не/взирая на лица слушателей.' },
+
+  // === ВСЛЕДСТВИЕ / В СЛЕДСТВИИ / В СЛЕДСТВИЕ ===
+  { q:'Предлог ВСЛЕДСТВИЕ',
+    c:'В/следстви.. непогоды рейс задержали.',
+    w:'В/следстви.. фигурировали только косвенные улики.' },
+  { q:'Предлог ВСЛЕДСТВИЕ',
+    c:'В/следстви.. изменения климата флора региона стала беднее',
+    w:'В/следстви.. были допущены ошибки, которын повлияли на общественное мнение.' },
+  { q:'Пишется раздельно?',
+    c:'Платон решил вмешаться в/следствие по делу Грэма.',
+    w:'Приговор был пересмотрен в/следствие ложных показаний .' },
+  { q:'Предлог',
+    c:'В/следстви.. засухи уровень воды в реке понизился',
+    w:'В/последстви..  уровень воды в реке понизился.' },
+
+  // === В ЗАКЛЮЧЕНИЕ / В ЗАКЛЮЧЕНИИ ===
+  { q:'Предлог В ЗАКЛЮЧЕНИЕ',
+    c:'В заключени.. своего доклада я хотел бы подвести итоги. ',
+    w:'В заключени.. врача говорилось о необходимости отдыха.' },
+  { q:'Предлог В ЗАКЛЮЧЕНИЕ',
+    c:'В заключени.. встречи участники обменялись контактами. ',
+    w:'В заключени.. экспертной комиссии было отказано.' },
+  { q:'Предлог В ЗАКЛЮЧЕНИЕ',
+    c:'Привести цитату в заключени.. сочинения..',
+    w:'В заключени.. этого договора заинтересованы обе стороны.' },
+  { q:'Предлог В ЗАКЛЮЧЕНИЕ',
+    c:'В заключени.. урока повторим правила.',
+    w:'Корабль-призрак оказался в заключени.. во льдах.' }
+];
+
+/* ===== ИГРА ===== */
+const frags=[...document.querySelectorAll(".frag")];
+let shown=new Array(16).fill(false);
+let queue=[], asked=0, mistakes=0;
+
+const qEl=document.getElementById("question");
+const a=document.getElementById("a");
+const b=document.getElementById("b");
+
+function update(){
+  document.getElementById("fragInfo").textContent=`Фрагменты: ${shown.filter(Boolean).length} / 16`;
+  document.getElementById("qInfo").textContent=`Вопрос: ${asked}`;
+}
+
+function show(i){ shown[i]=true; frags[i].classList.add("on"); }
+function hide(i){ shown[i]=false; frags[i].classList.remove("on"); }
+
+function randHidden(){
+  const h = shown.map((v,i)=>!v?i:null).filter(v=>v!==null);
+  if(!h.length) return;
+  show(h[Math.floor(Math.random()*h.length)]);
+}
+function randShown(){
+  const s = shown.map((v,i)=>v?i:null).filter(v=>v!==null);
+  if(!s.length) return;
+  hide(s[Math.floor(Math.random()*s.length)]);
+}
+
+function refillQueue(){
+  queue = [...Q.keys()].sort(()=>Math.random()-0.5);
+}
+
+function next(){
+  // победа только если реально все 16 включены
+  if(shown.every(Boolean)){
+    document.getElementById("game").classList.add("hidden");
+    document.getElementById("finish").classList.remove("hidden");
+    document.getElementById("mistakeText").textContent = `Ошибок допущено: ${mistakes}`;
+    const btn = document.getElementById("btnNextQuest");
+    if(btn) btn.classList.remove("hidden");
+    return;
+  }
+
+  if(!queue.length) refillQueue();
+
+  const i = queue.shift();
+  asked++; update();
+
+  // случайно меняем местами ответы (чтобы "всегда слева" не было)
+  const v = [
+    { t: Q[i].c, r: 1 },
+    { t: Q[i].w, r: 0 }
+  ].sort(()=>Math.random()-0.5);
+
+  qEl.textContent = Q[i].q;
+
+  [a,b].forEach((btn,j)=>{
+    btn.textContent = v[j].t;
+    btn.disabled = false;
+    btn.className = "answerBtn";
+    btn.onclick = () => {
+      // сразу блокируем, чтобы нельзя было "переиграть" кликом
+      a.disabled = b.disabled = true;
+
+      // подсветка
+      btn.classList.add(v[j].r ? "good" : "bad");
+
+      if(v[j].r){
+        randHidden();
+      }else{
+        mistakes++;
+        randShown();
+        // вопрос возвращаем в конец очереди
+        queue.push(i);
+      }
+
+      // автопереход
+      setTimeout(next, 520);
+    };
+  });
+}
+
+function start(){
+  const btn = document.getElementById("btnNextQuest");
+  if(btn) btn.classList.add("hidden");
+  shown.fill(false);
+  frags.forEach(f=>f.classList.remove("on"));
+  asked = 0;
+  mistakes = 0;
+  document.getElementById("finish").classList.add("hidden");
+  document.getElementById("game").classList.remove("hidden");
+  refillQueue();
+  update();
+  next();
+}
+
+start();
+
+// ====== Связь с основным index.html (встраивание через iframe) ======
+function goNext() {
+    // inside iframe in main quest
+    try{
+        if(window.parent && window.parent !== window){
+            window.parent.postMessage({ type: 'VITRAZH_DONE' }, '*');
+            return;
+        }
+    } catch(e) {
+        console.error("Error sending message to parent:", e);
+    }
+
+    // fallback: если открыт как отдельная страница - переходим на video2.mp4 (или index.html)
+    // Этот код сработает, если файл открыт сам по себе, не в iframe
+    try{
+        // Пытаемся перейти на video2.mp4, предполагая, что он лежит рядом
+        window.location.href = 'video2.mp4'; 
+    } catch(e){
+        console.error("Fallback navigation failed");
+    }
+}
+
+</script>
+</body>
+</html>
