@@ -1,1 +1,912 @@
-<!-- временный файл -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Платон: «Паракриминалистические» предлоги</title>
+
+<style>
+  :root{
+    --bg1:#0f1c2f;
+    --bg2:#1c2f4f;
+    --bg3:#163a3a;
+    --glass: rgba(255,255,255,.07);
+    --glass2: rgba(255,255,255,.05);
+    --line: rgba(120,170,255,.35);
+    --text: rgba(255,255,255,.92);
+    --muted: rgba(255,255,255,.68);
+    --blue:#66d9ff;
+    --ok:#88ffcc;
+    --bad:#ffb0b0;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family: "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+    background: linear-gradient(135deg,var(--bg1),var(--bg2) 45%,var(--bg3));
+    color: var(--text);
+    height: 100vh;
+    overflow:hidden;
+  }
+
+  header{
+    height:64px;
+    padding: 0 22px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:14px;
+  }
+
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    min-width: 280px;
+  }
+  .brand .title{
+    font-weight:700;
+    font-size:18px;
+    letter-spacing:.2px;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .badge{
+    padding:6px 10px;
+    border-radius:999px;
+    border:1px solid rgba(255,255,255,.12);
+    background: rgba(0,0,0,.18);
+    font-size:12px;
+    color: var(--muted);
+  }
+
+  .controls{
+    display:flex;
+    gap:10px;
+    align-items:center;
+  }
+  button{
+    border:1px solid var(--line);
+    background: rgba(0,0,0,.18);
+    color: var(--text);
+    padding: 9px 16px;
+    border-radius: 999px;
+    font-weight:700;
+    cursor:pointer;
+    transition:.18s;
+  }
+  button:hover{ background: rgba(102,217,255,.12); }
+  button:disabled{
+    opacity:.45;
+    cursor:not-allowed;
+    background: rgba(0,0,0,.14);
+  }
+
+  /* лёгкий “пульс” для ПРОДОЛЖИТЬ, когда активна */
+  .pulse{
+    box-shadow: 0 0 0 rgba(102,217,255,.0);
+    animation: pulse 1.3s infinite;
+  }
+  @keyframes pulse{
+    0%{ box-shadow:0 0 0 0 rgba(102,217,255,.0); }
+    55%{ box-shadow:0 0 0 8px rgba(102,217,255,.14); }
+    100%{ box-shadow:0 0 0 0 rgba(102,217,255,.0); }
+  }
+
+  .app{
+    height: calc(100vh - 64px);
+    padding: 18px 22px 22px;
+  }
+
+  .stage{
+    height:100%;
+    display:grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 18px;
+  }
+
+  .panel{
+    border-radius: 22px;
+    padding: 14px;
+    background: var(--glass2);
+    box-shadow: 0 0 18px rgba(0,0,0,.35) inset;
+    border: 1px solid rgba(255,255,255,.08);
+    overflow:hidden;
+    position:relative;
+  }
+
+  .leftBox{
+    height:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius: 18px;
+    background: rgba(0,0,0,.18);
+    border: 1px solid rgba(255,255,255,.08);
+    overflow:hidden;
+  }
+  .leftBox img, .leftBox video{
+    width:100%;
+    height:100%;
+    object-fit:contain;
+    display:block;
+  }
+
+  .rightHeader{
+    font-weight:800;
+    font-size:16px;
+    margin: 4px 6px 14px;
+    color: var(--text);
+  }
+  .rightBody{
+    height: calc(100% - 42px);
+    border-radius: 18px;
+    background: rgba(0,0,0,.16);
+    border: 1px solid rgba(255,255,255,.07);
+    padding: 16px 16px;
+    overflow:auto;
+  }
+
+  /* Recap */
+  .recapTitle{
+    text-align:center;
+    font-weight:900;
+    letter-spacing: .6px;
+    font-size: 22px;
+    margin-top: 6px;
+    margin-bottom: 34px;
+  }
+  .recapText{
+    margin-top: 42px;
+    text-align:center;
+    line-height:1.75;
+    font-size: 16px;
+    color: rgba(255,255,255,.86);
+  }
+  .recapText .blue{
+    color: var(--blue);
+    font-weight:800;
+  }
+  .hint{
+    margin-top: 16px;
+    text-align:center;
+    font-size: 12px;
+    color: rgba(255,255,255,.55);
+  }
+
+  /* Task */
+  .q{
+    margin: 10px 2px 14px;
+    line-height:1.5;
+    font-size: 16px;
+  }
+  .options{ display:flex; flex-direction:column; gap:10px; }
+  .opt{
+    display:flex;
+    gap:10px;
+    align-items:flex-start;
+    padding: 12px 12px;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,.10);
+    background: rgba(255,255,255,.06);
+  }
+  .opt input{ margin-top: 3px; }
+  .opt span{ line-height:1.45; color: rgba(255,255,255,.9); }
+  .row{
+    display:flex;
+    gap:10px;
+    margin-top: 14px;
+    align-items:center;
+  }
+  .msg{
+    margin-top: 10px;
+    min-height: 22px;
+    color: rgba(255,255,255,.85);
+  }
+  .msg.ok{ color: var(--ok); font-weight:900; }
+  .msg.bad{ color: var(--bad); font-weight:900; }
+
+  /* Fullscreen overlay */
+  .overlay{
+    position:fixed;
+    inset: 64px 0 0 0;
+    background: rgba(0,0,0,.78);
+    display:none;
+    align-items:center;
+    justify-content:center;
+    z-index: 50;
+    backdrop-filter: blur(6px);
+  }
+  .overlay.show{ display:flex; }
+
+  .overlayInner{
+    width: calc(100% - 44px);
+    height: calc(100% - 22px);
+    border-radius: 22px;
+    border: 1px solid rgba(255,255,255,.12);
+    background: rgba(0,0,0,.30);
+    overflow:hidden;
+    position:relative;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .overlayInner img{
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display:block;
+  }
+  .overlayInner iframe{
+    width: 100%;
+    height: 100%;
+    border:0;
+    display:block;
+    background: transparent;
+  }
+
+  .fadeIn{ animation: fadeIn .65s ease both; }
+  @keyframes fadeIn{
+    from{opacity:0; transform: translateY(6px);}
+    to{opacity:1; transform:none;}
+  }
+
+  /* Финальная надпись */
+  .finalTitle{
+    text-align:center;
+    font-weight:950;
+    letter-spacing:.9px;
+    font-size: 28px;
+    margin: 8px 0 10px;
+  }
+  .finalText{
+    text-align:center;
+    line-height:1.7;
+    font-size: 16px;
+    color: rgba(255,255,255,.86);
+  }
+</style>
+</head>
+
+<body>
+<header>
+  <div class="brand">
+    <div class="title">Платон: «Паракриминалистические» предлоги</div>
+    <div class="badge" id="badge">Сообщение</div>
+  </div>
+
+  <div class="controls">
+    <button id="btnStart" type="button">СТАРТ</button>
+    <button id="btnNext" type="button">ПРОДОЛЖИТЬ</button>
+  </div>
+</header>
+
+<div class="app">
+  <main class="stage">
+    <section class="panel" aria-label="Интерактивное видео">
+      <div class="leftBox" id="leftStage"></div>
+    </section>
+
+    <aside class="panel" aria-label="Задания">
+      <div class="rightHeader" id="rightHeader">Краткое содержание предыдущих серий</div>
+      <div class="rightBody" id="rightBody"></div>
+    </aside>
+  </main>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="overlayInner" id="overlayInner"></div>
+</div>
+
+<script>
+/* =========================
+   ФАЙЛЫ (пути)
+========================= */
+const LETTER_IMG = 'letter.jpg';
+const VIDEO0 = 'video.mp4';
+const RULE0  = 'rule.png';
+const VIDEO1 = 'video1.mp4';
+const VIDEO2 = 'video2.mp4';
+
+const TASK2_URL = 'задание2.html';
+const TOPLIVO_URL = 'toplivo_new.html';
+const VITRAZH_URL = 'vitrazh_linked_updated.html';
+const TASK4_URL = 'задание4.html';
+
+/* ✅ ФИНАЛЬНЫЙ БЛОК */
+const TASK5_URL = 'задание5.html';
+const VIDEO3 = 'video3.mp4';
+
+/* =========================
+   ЗВУК (сохраняем!)
+========================= */
+let __audioCtx = null;
+function beep(freq=880, ms=90, type='sine', vol=0.05){
+  try{
+    if(!__audioCtx) __audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const ctx = __audioCtx;
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = type;
+    o.frequency.value = freq;
+    g.gain.value = vol;
+    o.connect(g); g.connect(ctx.destination);
+    o.start();
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + ms/1000);
+    o.stop(ctx.currentTime + ms/1000);
+  }catch(e){}
+}
+
+/* =========================
+   UI
+========================= */
+const btnStart = document.getElementById('btnStart');
+const btnNext  = document.getElementById('btnNext');
+const badge    = document.getElementById('badge');
+const leftStage= document.getElementById('leftStage');
+const rightHeader = document.getElementById('rightHeader');
+const rightBody   = document.getElementById('rightBody');
+const overlay      = document.getElementById('overlay');
+const overlayInner = document.getElementById('overlayInner');
+
+function setBadge(txt){ badge.textContent = txt; }
+function setNextEnabled(on){
+  btnNext.disabled = !on;
+  btnNext.classList.toggle('pulse', on);
+}
+function hideOverlay(){
+  overlay.classList.remove('show');
+  overlayInner.innerHTML = '';
+}
+function showRuleFullscreen(src){
+  overlayInner.innerHTML = `<img src="${src}" alt="rule" class="fadeIn">`;
+  overlay.classList.add('show');
+}
+
+/* =========================
+   STATES
+========================= */
+const ST = {
+  SCENE1: 'SCENE1',
+  VIDEO0_PLAY: 'VIDEO0_PLAY',
+  VIDEO0_DONE: 'VIDEO0_DONE',
+  RULE0: 'RULE0',
+  TASK1: 'TASK1',
+  RULE_BAD1: 'RULE_BAD1',
+  TASK2_IFRAME: 'TASK2_IFRAME',
+  TOPLIVO_IFRAME: 'TOPLIVO_IFRAME',
+
+  VIDEO1_PLAY: 'VIDEO1_PLAY',
+  VIDEO1_DONE: 'VIDEO1_DONE',
+
+  TASK3: 'TASK3',
+  TASK3_OK: 'TASK3_OK',
+  RULE_BAD3: 'RULE_BAD3',
+  TASK4_IFRAME: 'TASK4_IFRAME',
+  VITRAZH_IFRAME: 'VITRAZH_IFRAME',
+
+  VIDEO2_PLAY: 'VIDEO2_PLAY',
+  VIDEO2_DONE: 'VIDEO2_DONE',
+
+  /* ✅ ФИНАЛ */
+  TASK5_IFRAME: 'TASK5_IFRAME',
+  VIDEO3_PLAY: 'VIDEO3_PLAY',
+  VIDEO3_DONE: 'VIDEO3_DONE'
+};
+let state = ST.SCENE1;
+
+/* =========================
+   RENDER
+========================= */
+function showLetter(){
+  leftStage.innerHTML = `<img src="${LETTER_IMG}" alt="letter" class="fadeIn">`;
+}
+function showVideo(src, {loop=false} = {}){
+  leftStage.innerHTML = `
+    <video id="mainVideo" src="${src}" autoplay ${loop ? 'loop' : ''} controls class="fadeIn"></video>
+  `;
+  return document.getElementById('mainVideo');
+}
+
+function showRecap(){
+  rightHeader.textContent = 'читаем';
+  rightBody.innerHTML = `
+    <div class="fadeIn">
+      <div class="recapTitle">Краткое содержание предыдущих серий</div>
+      <div class="recapText">
+        Космический корабль Платона потерпел аварию из-за ошибки робота Грэма, диспетчера.<br><br>
+        Позже из-за новой путаницы Платон лишился всех сбережений, отложенных на ремонт корабля.<br><br>
+        Ошибки были связаны с незнанием правил русского языка.<br><br>
+        <span class="blue">И вот Платон получает сообщение от Грэма…</span>
+      </div>
+      <div class="hint">Нажми <b>ПРОДОЛЖИТЬ</b>, чтобы перейти к видео.</div>
+    </div>
+  `;
+}
+
+function showTask1(){
+  rightHeader.textContent = 'Задание 1';
+  rightBody.innerHTML = `
+    <div class="fadeIn">
+      <p class="q">Что следует из письма Грэма,<br><b>если считать,</b><br>что оно написано без ошибок?</p>
+
+      <div class="options">
+        <label class="opt"><input type="radio" name="t1" value="1">
+          <span>1) <b>Грэм осознал, что надо</b> садиться за учебник <b>по русскому языку</b></span>
+        </label>
+
+        <label class="opt"><input type="radio" name="t1" value="2">
+          <span>2) <b>Грэма взяли под стражу,</b> следствие ведётся <b>некорректно</b></span>
+        </label>
+
+        <label class="opt"><input type="radio" name="t1" value="3">
+          <span>3) <b>Грэм</b> раскаивается, но учить правила для него <b>хуже заключения</b></span>
+        </label>
+
+        <label class="opt"><input type="radio" name="t1" value="4">
+          <span>4) <b>Грэм заключил договор</b> со следствием <b>о поиске виновных в аварии</b></span>
+        </label>
+      </div>
+
+      <div class="row">
+        <button id="t1Check">ПРОВЕРИТЬ</button>
+      </div>
+      <div class="msg" id="t1Msg"></div>
+    </div>
+  `;
+
+  const msg = document.getElementById('t1Msg');
+  document.getElementById('t1Check').addEventListener('click', () => {
+    const picked = document.querySelector('input[name="t1"]:checked');
+    if(!picked){
+      msg.className = 'msg bad';
+      msg.textContent = 'Выбери вариант.';
+      beep(320,120,'square',0.03);
+      return;
+    }
+
+    if(picked.value === '2'){
+      msg.className = 'msg ok';
+      msg.textContent = 'ВЕРНО! Продолжаем…';
+      beep(920,130,'sine',0.05);
+      setTimeout(()=>go(ST.TOPLIVO_IFRAME), 550);
+    }else{
+      msg.className = 'msg bad';
+      msg.textContent = 'Неверно. Сначала повтори правило, затем открой аварийный отсек.';
+      beep(240,150,'triangle',0.05);
+      setTimeout(()=>go(ST.RULE_BAD1), 550);
+    }
+  });
+}
+
+function showTask3(){
+  showLetter();
+  rightHeader.textContent = 'Задание 3';
+  rightBody.innerHTML = `
+    <div class="fadeIn">
+      <p class="q">Выбери правильные<br>варианты написания<br>слов, в которых<b> Грэм ошибся</b>…</p>
+
+      <div class="options">
+        <label class="opt"><input type="radio" name="t3" value="1">
+          <span>1) <b>вследствии,</b> в  заключение</span>
+        </label>
+
+        <label class="opt"><input type="radio" name="t3" value="2">
+          <span>2) <b>в  следствие,</b> взаключении</span>
+        </label>
+
+        <label class="opt"><input type="radio" name="t3" value="3">
+          <span>3) <b>вследствие,</b> взаключение</span>
+        </label>
+
+        <label class="opt"><input type="radio" name="t3" value="4">
+          <span>4) <b>вследствие,</b> в  заключение</span>
+        </label>
+      </div>
+
+      <div class="row">
+        <button id="t3Check">ПРОВЕРИТЬ</button>
+      </div>
+      <div class="msg" id="t3Msg"></div>
+    </div>
+  `;
+
+  const msg = document.getElementById('t3Msg');
+  document.getElementById('t3Check').addEventListener('click', () => {
+    const picked = document.querySelector('input[name="t3"]:checked');
+    if(!picked){
+      msg.className = 'msg bad';
+      msg.textContent = 'Выбери вариант.';
+      beep(320,120,'square',0.03);
+      return;
+    }
+
+    if(picked.value === '4'){
+      msg.className = 'msg ok';
+      msg.textContent = 'ВЕРНО! Нажми ПРОДОЛЖИТЬ';
+      beep(920,130,'sine',0.05);
+      setNextEnabled(true);
+      state = ST.TASK3_OK;
+    }else{
+      msg.className = 'msg bad';
+      msg.textContent = 'Неверно. Сначала повтори правило и открой аварийный отсек.';
+      beep(240,150,'triangle',0.05);
+      setTimeout(()=>go(ST.RULE_BAD3), 550);
+    }
+  });
+}
+
+/* ===== ИСПРАВЛЕННАЯ ФУНКЦИЯ для задания 2 ===== */
+function openTask2Iframe(){
+  rightHeader.textContent = 'Аварийный отсек';
+  rightBody.innerHTML = `
+    <div class="fadeIn" style="line-height:1.6;color:rgba(255,255,255,.85);">
+      <b>Открылся аварийный отсек.</b><br>
+      Выполни задание. После правильного ответа автоматически вернёшься к заданию 1.
+    </div>
+  `;
+  overlayInner.innerHTML = `<iframe src="${TASK2_URL}" title="Задание 2"></iframe>`;
+  overlay.classList.add('show');
+  setNextEnabled(false);
+}
+
+function openToplivoIframe(){
+  rightHeader.textContent = 'Топливо';
+  rightBody.innerHTML = `
+    <div class="fadeIn" style="line-height:1.6;color:rgba(255,255,255,.85);">
+      <b>Мини-игра «Топливо».</b><br>
+      Дойди до финала и нажми кнопку <b>ВПЕРЁД</b> — после этого продолжим полёт.
+    </div>
+  `;
+  overlayInner.innerHTML = `<iframe src="${TOPLIVO_URL}" title="Топливо"></iframe>`;
+  overlay.classList.add('show');
+  setNextEnabled(false);
+}
+
+function openTask4Iframe(){
+  rightHeader.textContent = 'Аварийный отсек';
+  rightBody.innerHTML = `
+    <div class="fadeIn" style="line-height:1.6;color:rgba(255,255,255,.85);">
+      <b>Открылся аварийный отсек.</b><br>
+      Выполни задание. После правильного ответа автоматически вернёшься к заданию 3.
+    </div>
+  `;
+  overlayInner.innerHTML = `<iframe src="${TASK4_URL}" title="Задание 4"></iframe>`;
+  overlay.classList.add('show');
+  setNextEnabled(false);
+}
+
+function openVitrazhIframe() {
+  overlayInner.innerHTML = `<iframe src="${VITRAZH_URL}" title="Витражи" style="width:100%;height:100%;border:0;border-radius:18px;background:transparent;" allow="autoplay"></iframe>`;
+  overlay.classList.add('show');
+  setNextEnabled(false);
+}
+
+/* ✅ Задание 5 */
+function openTask5Iframe(){
+  rightHeader.textContent = 'Финальное задание';
+  rightBody.innerHTML = `
+    <div class="fadeIn" style="line-height:1.6;color:rgba(255,255,255,.85);">
+      Выполни финальное задание. После правильного ответа начнётся финальное видео.
+    </div>
+  `;
+  overlayInner.innerHTML = `<iframe src="${TASK5_URL}" title="Задание 5"></iframe>`;
+  overlay.classList.add('show');
+  setNextEnabled(false);
+}
+
+/* =========================
+   ПЕРЕХОДЫ
+========================= */
+function go(next){
+  state = next;
+
+  if(next === ST.SCENE1){
+    hideOverlay();
+    setBadge('Сообщение');
+    showLetter();
+    showRecap();
+    setNextEnabled(true);
+    return;
+  }
+
+  if(next === ST.VIDEO0_PLAY){
+    hideOverlay();
+    setBadge('Видео');
+    setNextEnabled(false);
+
+    const v = showVideo(VIDEO0);
+    rightHeader.textContent = 'Видео';
+    rightBody.innerHTML = `<div class="fadeIn" style="line-height:1.6;color:rgba(255,255,255,.85);">
+      Смотри видео. После окончания активируется кнопка <b>ПРОДОЛЖИТЬ</b>.
+    </div>`;
+
+    v.addEventListener('ended', () => {
+      state = ST.VIDEO0_DONE;
+      beep(760,120,'sine',0.05);
+      setNextEnabled(true);
+      rightBody.innerHTML = `<div class="fadeIn" style="line-height:1.6;color:rgba(255,255,255,.85);">
+        Видео завершено. Нажми <b>ПРОДОЛЖИТЬ</b>.
+      </div>`;
+    }, { once:true });
+
+    return;
+  }
+
+  if(next === ST.RULE0){
+    setBadge('Правило');
+    showRuleFullscreen(RULE0);
+    rightHeader.textContent = 'Правило';
+    rightBody.innerHTML = `<div class="fadeIn" style="line-height:1.6;color:rgba(255,255,255,.85);">
+      Ознакомься с правилом. Нажми <b>ПРОДОЛЖИТЬ</b>, чтобы перейти к заданию 1.
+    </div>`;
+    setNextEnabled(true);
+    return;
+  }
+
+  if(next === ST.TASK1){
+    hideOverlay();
+    setBadge('Задание');
+    showLetter();
+    setNextEnabled(false);
+    showTask1();
+    return;
+  }
+
+  if(next === ST.RULE_BAD1){
+    setBadge('Правило');
+    showRuleFullscreen(RULE0);
+    rightHeader.textContent = 'Правило';
+    rightBody.innerHTML = `<div class="fadeIn" style="line-height:1.6;color:rgba(255,255,255,.85);">
+      Ошибка — повтори правило. Нажми <b>ПРОДОЛЖИТЬ</b>, чтобы открыть аварийный отсек.
+    </div>`;
+    setNextEnabled(true);
+    return;
+  }
+
+  if(next === ST.TASK2_IFRAME){
+    setBadge('Аварийный отсек');
+    openTask2Iframe();
+    return;
+  }
+
+  if(next === ST.TOPLIVO_IFRAME){
+    setBadge('Топливо');
+    openToplivoIframe();
+    return;
+  }
+
+  if(next === ST.VIDEO1_PLAY){
+    hideOverlay();
+    setBadge('Видео');
+    setNextEnabled(false);
+
+    const v = showVideo(VIDEO1);
+    rightHeader.textContent = 'Видео ';
+    rightBody.innerHTML = `<div class="fadeIn" style="line-height:1.6;color:rgba(255,255,255,.85);">
+      Продолжаем историю…
+    </div>`;
+
+    v.addEventListener('ended', () => {
+      state = ST.VIDEO1_DONE;
+      setNextEnabled(true);
+      rightBody.innerHTML = `<div class="fadeIn" style="line-height:1.6;color:rgba(255,255,255,.85);">
+        Видео  завершено. Нажми <b>ПРОДОЛЖИТЬ</b>.
+      </div>`;
+    }, { once:true });
+
+    return;
+  }
+
+  if(next === ST.TASK3){
+    hideOverlay();
+    setBadge('Задание');
+    setNextEnabled(false);
+    showLetter();
+    showTask3();
+    return;
+  }
+
+  if(next === ST.RULE_BAD3){
+    setBadge('Правило');
+    showRuleFullscreen(RULE0);
+    rightHeader.textContent = 'Правило';
+    rightBody.innerHTML = `<div class="fadeIn" style="line-height:1.6;color:rgba(255,255,255,.85);">
+      Ошибка — повтори правило. Нажми <b>ПРОДОЛЖИТЬ</b>, чтобы открыть аварийный отсек.
+    </div>`;
+    setNextEnabled(true);
+    return;
+  }
+
+  if(next === ST.TASK4_IFRAME){
+    setBadge('Аварийный отсек');
+    openTask4Iframe();
+    return;
+  }
+
+  if(next === ST.VITRAZH_IFRAME){
+    setBadge('Витражи');
+    openVitrazhIframe();
+    return;
+  }
+
+  if(next === ST.VIDEO2_PLAY){
+    hideOverlay();
+    setBadge('Видео');
+    rightHeader.textContent = 'Видео';
+    rightBody.innerHTML = `<div class="fadeIn">Смотри видео. После окончания нажми <b>ПРОДОЛЖИТЬ</b>.</div>`;
+    setNextEnabled(false);
+
+    const v = showVideo(VIDEO2);
+    v.onended = () => {
+      if (state === ST.VIDEO2_PLAY) {
+        state = ST.VIDEO2_DONE;
+        setNextEnabled(true);
+        rightBody.innerHTML = `<div class="fadeIn">Видео завершено. Нажми <b>ПРОДОЛЖИТЬ</b>.</div>`;
+      }
+    };
+    return;
+  }
+
+  /* ✅ После video2.mp4 сразу запускаем задание 5 */
+  if(next === ST.VIDEO2_DONE){
+    return go(ST.TASK5_IFRAME);
+  }
+
+  if(next === ST.TASK5_IFRAME){
+    setBadge('Финал');
+    openTask5Iframe();
+    return;
+  }
+
+  /* ✅ video3.mp4 БЕЗ loop. После окончания — финальная надпись */
+  if(next === ST.VIDEO3_PLAY){
+    hideOverlay();
+    setBadge('Финал');
+    setNextEnabled(false);
+
+    rightHeader.textContent = 'Финал';
+    rightBody.innerHTML = `<div class="fadeIn" style="line-height:1.6;color:rgba(255,255,255,.85);">
+      Финальное видео запущено.
+    </div>`;
+
+    const v = showVideo(VIDEO3, { loop:false });
+    v.addEventListener('ended', () => {
+      state = ST.VIDEO3_DONE;
+      setBadge('Финал');
+      rightHeader.textContent = 'Финал';
+      rightBody.innerHTML = `
+        <div class="fadeIn">
+          <div class="finalTitle">Продолжение следует…</div>
+          <div class="finalText">
+            Дальше будет ещё интереснее. 🚀
+          </div>
+          <div class="hint" style="margin-top:18px;">
+            Можно нажать <b>СТАРТ</b>, чтобы пройти квест ещё раз.
+          </div>
+        </div>
+      `;
+    }, { once:true });
+
+    return;
+  }
+
+  if(next === ST.VIDEO3_DONE){
+    setNextEnabled(false);
+    return;
+  }
+}
+
+/* =========================
+   КНОПКИ
+========================= */
+btnStart.addEventListener('click', () => {
+  beep(980, 90, 'sine', 0.05);
+  go(ST.SCENE1);
+});
+
+btnNext.addEventListener('click', () => {
+  if(btnNext.disabled) return;
+  beep(640, 80, 'triangle', 0.04);
+
+  if(state === ST.SCENE1) return go(ST.VIDEO0_PLAY);
+  if(state === ST.VIDEO0_DONE) return go(ST.RULE0);
+  if(state === ST.RULE0)  return go(ST.TASK1);
+
+  if(state === ST.RULE_BAD1) return go(ST.TASK2_IFRAME);
+  if(state === ST.RULE_BAD3) return go(ST.TASK4_IFRAME);
+
+  if(state === ST.TASK2_IFRAME){
+    hideOverlay();
+    return go(ST.TOPLIVO_IFRAME);
+  }
+
+  if(state === ST.TOPLIVO_IFRAME){
+    hideOverlay();
+    return go(ST.VIDEO1_PLAY);
+  }
+
+  if(state === ST.TASK4_IFRAME){
+    hideOverlay();
+    return go(ST.VITRAZH_IFRAME);
+  }
+
+  if(state === ST.TASK3_OK){
+    return go(ST.VITRAZH_IFRAME);
+  }
+
+  if(state === ST.VITRAZH_IFRAME){
+    return;
+  }
+
+  if(state === ST.VIDEO1_DONE){
+    return go(ST.TASK3);
+  }
+
+  /* после video2.mp4 */
+  if(state === ST.VIDEO2_DONE){
+    return go(ST.TASK5_IFRAME);
+  }
+});
+
+/* =========================
+   СИГНАЛЫ ИЗ IFRAME
+========================= */
+window.addEventListener('message', (ev) => {
+  const data = ev ? ev.data : null;
+
+  /* ===== ИСПРАВЛЕННЫЙ БЛОК ДЛЯ TASK2 ===== */
+  if(data === 'TASK2_OK' || (data && data.type === 'TASK2_OK')){
+    if(state === ST.TASK2_IFRAME){
+      beep(980, 140, 'sine', 0.05);
+      hideOverlay();
+      // Возвращаемся в Задание 1, чтобы ученик попробовал снова
+      go(ST.TASK1);
+    }
+    return;
+  }
+
+  if(data === 'TOPLIVO_DONE' || (data && data.type === 'TOPLIVO_DONE')){
+    if(state === ST.TOPLIVO_IFRAME){
+      beep(980, 140, 'sine', 0.05);
+      go(ST.VIDEO1_PLAY);
+    }
+    return;
+  }
+
+  /* Блок для TASK4 */
+  if(data === 'TASK4_OK' || (data && data.type === 'TASK4_OK')){
+    if(state === ST.TASK4_IFRAME){
+      beep(980, 140, 'sine', 0.05);
+      hideOverlay();
+      // Возвращаемся в Задание 3, чтобы ученик попробовал снова
+      go(ST.TASK3);
+    }
+    return;
+  }
+
+  if ((typeof data === 'string' && data === 'VITRAZH_DONE') || (data && data.type === 'VITRAZH_DONE')) {
+    if(state === ST.VITRAZH_IFRAME){
+      hideOverlay();
+      return go(ST.VIDEO2_PLAY);
+    }
+  }
+
+  /* ✅ Сигнал из задания 5 */
+  if(data && data.type === 'TASK5_COMPLETED'){
+    if(state === ST.TASK5_IFRAME){
+      hideOverlay();
+      return go(ST.VIDEO3_PLAY);
+    }
+  }
+});
+
+/* =========================
+   INIT
+========================= */
+go(ST.SCENE1);
+</script>
+
+</body>
+</html>
