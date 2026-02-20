@@ -350,6 +350,9 @@ const rightBody   = document.getElementById('rightBody');
 const overlay      = document.getElementById('overlay');
 const overlayInner = document.getElementById('overlayInner');
 
+// Таймер финального показа правила (чтобы не срабатывал при перезапуске)
+let __finalRuleTimer = null;
+
 function setBadge(txt){ badge.textContent = txt; }
 function setNextEnabled(on){
   btnNext.disabled = !on;
@@ -392,7 +395,8 @@ const ST = {
   /* ✅ ФИНАЛ */
   TASK5_IFRAME: 'TASK5_IFRAME',
   VIDEO3_PLAY: 'VIDEO3_PLAY',
-  VIDEO3_DONE: 'VIDEO3_DONE'
+  VIDEO3_DONE: 'VIDEO3_DONE',
+  FINAL_RULE: 'FINAL_RULE'
 };
 let state = ST.SCENE1;
 
@@ -600,6 +604,12 @@ function openTask5Iframe(){
    ПЕРЕХОДЫ
 ========================= */
 function go(next){
+  // если в прошлом состоянии был запланирован финальный показ правила — отменяем
+  if(__finalRuleTimer){
+    clearTimeout(__finalRuleTimer);
+    __finalRuleTimer = null;
+  }
+
   state = next;
 
   if(next === ST.SCENE1){
@@ -787,12 +797,36 @@ function go(next){
           </div>
         </div>
       `;
+
+      // ✨ Через несколько секунд снова показываем правило на весь экран и «замираем» на нём
+      __finalRuleTimer = setTimeout(() => {
+        state = ST.FINAL_RULE;
+        setBadge('Правило');
+        rightHeader.textContent = 'Правило';
+        rightBody.innerHTML = `<div class="fadeIn" style="line-height:1.6;color:rgba(255,255,255,.85);">
+          Правило показано повторно. Если хочешь пройти квест снова — нажми <b>СТАРТ</b>.
+        </div>`;
+        showRuleFullscreen(RULE0);
+        setNextEnabled(false);
+      }, 3500);
     }, { once:true });
 
     return;
   }
 
   if(next === ST.VIDEO3_DONE){
+    setNextEnabled(false);
+    return;
+  }
+
+  if(next === ST.FINAL_RULE){
+    // На всякий случай: если когда-либо сюда попадём напрямую
+    setBadge('Правило');
+    rightHeader.textContent = 'Правило';
+    rightBody.innerHTML = `<div class="fadeIn" style="line-height:1.6;color:rgba(255,255,255,.85);">
+      Правило показано повторно. Если хочешь пройти квест снова — нажми <b>СТАРТ</b>.
+    </div>`;
+    showRuleFullscreen(RULE0);
     setNextEnabled(false);
     return;
   }
