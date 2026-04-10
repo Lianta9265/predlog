@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Карточки: в течение / в течении — автопроверка</title>
+  <style>
+    :root{
+      --card-border: #4fc3f7;
+      --ok: #22c55e;
+      --bad: #ef4444;
+      --hover: rgba(79,195,247,0.9);
+      --glow: rgba(255, 230, 120, 0.85);
+    }
+
+    body{
+      margin:0;
+      background:#000;
+      min-height:100vh;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      font-family: Arial, sans-serif;
+      color:#fff;
+    }
+
+    .wrap{
+      width:min(1200px, 95vw);
+      display:grid;
+      gap:10px;
+      justify-items:center;
+    }
+
+    .hint{
+      font-size:14px;
+      opacity:0.95;
+      text-align:center;
+      line-height:1.25;
+      padding:0 10px;
+    }
+
+    .scene{
+      position:relative;
+      width:1200px;
+      height:700px;
+      border-radius:16px;
+      overflow:hidden;
+      background:#000;
+    }
+
+    @media (max-width:1240px){
+      .scene{ width:95vw; height:calc(95vw * 0.58); }
+    }
+
+    /* Фон как <img>, чтобы зоны корректно совпадали при contain */
+    .bg{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      object-fit:contain;
+      object-position:center;
+      user-select:none;
+      -webkit-user-drag:none;
+      pointer-events:none;
+      background:#000;
+    }
+
+    .targets{
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+    }
+
+    .target{
+      position:absolute;
+      border-radius:14px;
+      background:transparent;
+      outline:2px dashed transparent;
+      outline-offset:2px;
+      transition: outline-color .15s ease, background .15s ease, box-shadow .15s ease;
+      pointer-events:auto;
+    }
+
+    .target.hover{
+      outline-color: var(--hover);
+      box-shadow: 0 0 0 3px rgba(79,195,247,0.18);
+    }
+
+    .target.correct{
+      outline-color: var(--ok);
+      background: rgba(34,197,94,0.10);
+      box-shadow: 0 0 0 3px rgba(34,197,94,0.18);
+    }
+
+    .target.wrong{
+      outline-color: var(--bad);
+      background: rgba(239,68,68,0.10);
+      box-shadow: 0 0 0 3px rgba(239,68,68,0.18);
+    }
+
+    /* Карточки */
+    .card{
+      position:absolute;
+      padding:5px 9px;
+      background:#fff;
+      color:#000;
+      border-radius:9px;
+      font-size:13px;
+      font-weight:700;
+      cursor:grab;
+      user-select:none;
+      white-space:nowrap;
+      border:2px solid var(--card-border);
+      box-shadow:0 4px 10px rgba(0,0,0,0.30);
+      transition: transform .15s ease, box-shadow .2s ease;
+      touch-action:none;
+    }
+
+    .card:active{
+      cursor:grabbing;
+      transform:scale(1.05);
+      box-shadow:0 6px 14px rgba(0,0,0,0.45);
+    }
+
+    /* Нижняя панель */
+    .toolbar{
+      width:100%;
+      display:grid;
+      grid-template-columns: 1fr auto auto auto;
+      gap:10px;
+      align-items:center;
+    }
+
+    @media (max-width:900px){
+      .toolbar{ grid-template-columns: 1fr 1fr; grid-auto-rows:auto; }
+    }
+
+    .bank{
+      background: rgba(255,255,255,0.08);
+      border-radius:14px;
+      padding:10px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      min-height:52px;
+      overflow:auto;
+    }
+
+    .bank-title{
+      font-weight:800;
+      opacity:.9;
+      margin-right:6px;
+      white-space:nowrap;
+    }
+
+    .bank .slot{
+      position:relative;
+      height:38px;
+      min-width: 520px;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      flex-wrap:wrap;
+    }
+
+    .score{
+      font-weight:800;
+      padding:10px 14px;
+      border-radius:12px;
+      background: rgba(255,255,255,0.10);
+      white-space:nowrap;
+    }
+
+    button{
+      border:0;
+      border-radius:12px;
+      padding:10px 14px;
+      font-weight:800;
+      cursor:pointer;
+      background: rgba(255,255,255,0.12);
+      color:#fff;
+      white-space:nowrap;
+      transition: background .15s ease, opacity .15s ease, box-shadow .2s ease, transform .12s ease;
+    }
+
+    button:hover{ background: rgba(255,255,255,0.18); }
+    button:disabled{
+      opacity:.45;
+      cursor:not-allowed;
+    }
+    button:disabled:hover{ background: rgba(255,255,255,0.12); }
+
+    /* Кнопка ФИНАЛ */
+    #check.final-ready{
+      background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
+      color: white !important;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.5), 
+                  0 8px 25px rgba(59, 130, 246, 0.4),
+                  0 2px 4px rgba(0,0,0,0.3) !important;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+      font-weight: 900;
+      letter-spacing: 0.5px;
+      transform: translateY(-2px);
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+      animation: pulse-blue 2s infinite;
+    }
+
+    #check.final-ready:hover{
+      background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%) !important;
+      transform: translateY(-3px) scale(1.03);
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.6), 
+                  0 12px 35px rgba(59, 130, 246, 0.5),
+                  0 3px 6px rgba(0,0,0,0.4) !important;
+    }
+
+    #check.final-ready:active{
+      transform: translateY(0) scale(0.98);
+      box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.4), 
+                  0 4px 12px rgba(59, 130, 246, 0.3),
+                  0 1px 2px rgba(0,0,0,0.2) !important;
+    }
+
+    @keyframes pulse-blue {
+      0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+      70% { box-shadow: 0 0 0 15px rgba(59, 130, 246, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+    }
+
+    /* FULLSCREEN видео */
+    .video-overlay{
+      position:fixed;
+      inset:0;
+      background:#000;
+      z-index:999999;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:12px;
+    }
+    .video-overlay.show{ display:flex; }
+
+    .video-overlay video{
+      width:100%;
+      height:100%;
+      object-fit:contain;
+      user-select:none;
+      -webkit-user-drag:none;
+    }
+
+    .video-close{
+      position:absolute;
+      top:14px;
+      right:14px;
+      border-radius:12px;
+      padding:10px 12px;
+      font-weight:900;
+      background: rgba(255,255,255,0.14);
+      color:#fff;
+      border:0;
+      cursor:pointer;
+      z-index:1000000;
+    }
+    .video-close:hover{ background: rgba(255,255,255,0.22); }
+  </style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="hint">
+    Перетащи карточки <b>«в течение»</b>, <b>«в течение» (сущ.)</b> и <b>«в течении»</b> на нужные сюжетные картинки (секции). Затем нажми <b>ПРОВЕРИТЬ</b>.
+  </div>
+
+  <div class="scene" id="scene">
+    <img class="bg" id="bg" alt="фон" src="techenie.jpg" />
+    <div class="targets" id="targets"></div>
+  </div>
+
+  <div class="toolbar">
+    <div class="bank" id="bank">
+      <span class="bank-title">Карточки:</span>
+      <div class="slot" id="slot"></div>
+    </div>
+
+    <button id="check">ПРОВЕРИТЬ</button>
+    <div class="score" id="score">Верно: 0 / 8</div>
+    <button id="reset">СБРОС</button>
+  </div>
+</div>
+
+<!-- ФИНАЛЬНОЕ ВИДЕО -->
+<div class="video-overlay" id="videoOverlay" aria-hidden="true">
+  <button class="video-close" id="videoClose" title="Закрыть">×</button>
+  <video id="finalVideo" playsinline loop>
+    <source src="video3.mp4" type="video/mp4">
+    Ваш браузер не поддерживает видео.
+  </video>
+</div>
+
+<!-- ЗВУК АПЛОДИСМЕНТОВ -->
+<audio id="applauseSound" preload="auto">
+  <source src="applause.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+  const scene = document.getElementById('scene');
+  const bg = document.getElementById('bg');
+  const targetsEl = document.getElementById('targets');
+  const slot = document.getElementById('slot');
+  const scoreEl = document.getElementById('score');
+  const resetBtn = document.getElementById('reset');
+  const checkBtn = document.getElementById('check');
+
+  const videoOverlay = document.getElementById('videoOverlay');
+  const videoClose = document.getElementById('videoClose');
+  const finalVideo = document.getElementById('finalVideo');
+  const applauseSound = document.getElementById('applauseSound');
+
+  // --- КАРТОЧКИ ВНИЗУ (в "банке") ---
+  // 3 × В ТЕЧЕНИЕ (пр), 2 × В ТЕЧЕНИЕ (сущ), 3 × В ТЕЧЕНИИ (сущ)
+  const CARD_DATA = [
+    { kind:'vt_pr', text:'В ТЕЧЕНИЕ (пр)' },
+    { kind:'vt_pr', text:'В ТЕЧЕНИЕ (пр)' },
+    { kind:'vt_pr', text:'В ТЕЧЕНИЕ (пр)' },
+    { kind:'vt_sush_e', text:'В ТЕЧЕНИЕ (сущ)' },
+    { kind:'vt_sush_e', text:'В ТЕЧЕНИЕ (сущ)' },
+    { kind:'vt_sush_i', text:'В ТЕЧЕНИИ (сущ)' },
+    { kind:'vt_sush_i', text:'В ТЕЧЕНИИ (сущ)' },
+    { kind:'vt_sush_i', text:'В ТЕЧЕНИИ (сущ)' },
+  ];
+
+  const cards = [];
+
+  function makeCard(i){
+    const d = CARD_DATA[i];
+    const el = document.createElement('div');
+    el.className = 'card';
+    el.dataset.kind = d.kind;
+    el.dataset.home = 'bank';
+    el.dataset.cardId = String(i);
+    el.textContent = d.text;
+
+    // пока карточка в банке — позиционирование не нужно
+    el.style.position = 'relative';
+    el.style.left = 'auto';
+    el.style.top  = 'auto';
+
+    slot.appendChild(el);
+    cards.push(el);
+    return el;
+  }
+
+  CARD_DATA.forEach((_, i) => makeCard(i));
+
+  // --- ЗОНЫ: БОЛЬШИЕ, НА ВСЮ КАРТИНКУ-СЦЕНУ ---
+  // 8 зон = 4 колонки × 2 ряда. Каждая зона покрывает целый кадр.
+  // Правильные ответы по кадрам:
+  // 1, 5, 7 = В ТЕЧЕНИЕ (пр)
+  // 2, 3 = В ТЕЧЕНИЕ (сущ)
+  // 4, 6, 8 = В ТЕЧЕНИИ (сущ)
+  // Нумерация слева направо, сверху вниз.
+  const ZONES_GRID = [
+    { id: 1, col:0, row:0, correct:'vt_pr' },
+    { id: 2, col:1, row:0, correct:'vt_sush_e' },
+    { id: 3, col:2, row:0, correct:'vt_sush_e' },
+    { id: 4, col:3, row:0, correct:'vt_sush_i' },
+    { id: 5, col:0, row:1, correct:'vt_pr' },
+    { id: 6, col:1, row:1, correct:'vt_sush_i' },
+    { id: 7, col:2, row:1, correct:'vt_pr' },
+    { id: 8, col:3, row:1, correct:'vt_sush_i' },
+  ];
+
+  const state = {
+    zones: new Map(),        // id -> zoneEl
+    placed: new Map(),       // zoneId -> cardEl
+    finalReady: false,
+    applausePlayed: false,
+  };
+
+  function stopApplause(){
+    applauseSound.pause();
+    applauseSound.currentTime = 0;
+    state.applausePlayed = false;
+  }
+
+  function playApplauseOnce(){
+    if (state.applausePlayed) return;
+    applauseSound.currentTime = 0;
+    applauseSound.play().catch(e => {
+      console.warn('Audio autoplay blocked:', e);
+    });
+    state.applausePlayed = true;
+  }
+
+  function getImageRectInScene(){
+    const sceneRect = scene.getBoundingClientRect();
+    const imgNaturalW = bg.naturalWidth || 1;
+    const imgNaturalH = bg.naturalHeight || 1;
+
+    const sceneW = sceneRect.width;
+    const sceneH = sceneRect.height;
+
+    const imgRatio = imgNaturalW / imgNaturalH;
+    const sceneRatio = sceneW / sceneH;
+
+    let w, h, x, y;
+    if (imgRatio > sceneRatio) {
+      w = sceneW;
+      h = w / imgRatio;
+      x = 0;
+      y = (sceneH - h) / 2;
+    } else {
+      h = sceneH;
+      w = h * imgRatio;
+      y = 0;
+      x = (sceneW - w) / 2;
+    }
+    return { x, y, w, h };
+  }
+
+  function renderZones(){
+    targetsEl.innerHTML = '';
+    state.zones.clear();
+
+    const imgRect = getImageRectInScene();
+
+    const cols = 4;
+    const rows = 2;
+
+    // небольшой внутренний отступ, чтобы не цеплять белые границы коллажа
+    const padX = 0.01; // 1% ширины картинки
+    const padY = 0.015; // 1.5% высоты картинки
+
+    const cellW = imgRect.w / cols;
+    const cellH = imgRect.h / rows;
+
+    ZONES_GRID.forEach(z => {
+      const el = document.createElement('div');
+      el.className = 'target';
+      el.dataset.zoneId = String(z.id);
+      el.dataset.correct = z.correct;
+
+      const left = imgRect.x + z.col * cellW + padX * imgRect.w;
+      const top  = imgRect.y + z.row * cellH + padY * imgRect.h;
+      const width  = cellW - 2 * padX * imgRect.w;
+      const height = cellH - 2 * padY * imgRect.h;
+
+      el.style.left = left + 'px';
+      el.style.top = top + 'px';
+      el.style.width = width + 'px';
+      el.style.height = height + 'px';
+
+      targetsEl.appendChild(el);
+      state.zones.set(z.id, el);
+    });
+  }
+
+  function clearZoneClasses(zoneEl){
+    zoneEl.classList.remove('hover','correct','wrong');
+  }
+
+  function markZone(zoneEl, cardEl){
+    clearZoneClasses(zoneEl);
+    const ok = cardEl && cardEl.dataset.kind === zoneEl.dataset.correct;
+    zoneEl.classList.add(ok ? 'correct' : 'wrong');
+  }
+
+  function computeScore(){
+    let ok = 0;
+    for (const [zoneId, zoneEl] of state.zones.entries()) {
+      const cardEl = state.placed.get(zoneId);
+      if (cardEl && cardEl.dataset.kind === zoneEl.dataset.correct) ok++;
+    }
+    return ok;
+  }
+
+  function setScoreText(ok){
+    scoreEl.textContent = `Верно: ${ok} / 8`;
+  }
+
+  function centerOf(el){
+    const r = el.getBoundingClientRect();
+    return { cx: r.left + r.width/2, cy: r.top + r.height/2 };
+  }
+
+  function getZoneUnderCard(cardEl){
+    const c = centerOf(cardEl);
+    for (const [id, zoneEl] of state.zones.entries()) {
+      const zr = zoneEl.getBoundingClientRect();
+      const inside = c.cx >= zr.left && c.cx <= zr.right && c.cy >= zr.top && c.cy <= zr.bottom;
+      if (inside) return { id, zoneEl };
+    }
+    return null;
+  }
+
+  function releaseCardFromAnyZone(cardEl){
+    for (const [zoneId, placedCard] of state.placed.entries()) {
+      if (placedCard === cardEl) {
+        state.placed.delete(zoneId);
+        const zoneEl = state.zones.get(zoneId);
+        if (zoneEl) clearZoneClasses(zoneEl);
+        break;
+      }
+    }
+  }
+
+  // --- DRAG (мышь + тач) ---
+  function ensureCardInScene(cardEl, clientX, clientY){
+    if (cardEl.dataset.home === 'scene') return;
+
+    // переносим карточку из банка в сцену
+    cardEl.dataset.home = 'scene';
+    scene.appendChild(cardEl);
+    cardEl.style.position = 'absolute';
+
+    const sceneRect = scene.getBoundingClientRect();
+    // при первом переносе ставим под курсор
+    cardEl.style.left = (clientX - sceneRect.left - cardEl.offsetWidth/2) + 'px';
+    cardEl.style.top  = (clientY - sceneRect.top  - cardEl.offsetHeight/2) + 'px';
+  }
+
+  function returnCardToBank(cardEl){
+    cardEl.dataset.home = 'bank';
+    releaseCardFromAnyZone(cardEl);
+    slot.appendChild(cardEl);
+    cardEl.style.position = 'relative';
+    cardEl.style.left = 'auto';
+    cardEl.style.top  = 'auto';
+    cardEl.style.zIndex = '';
+  }
+
+  function setFinalReady(isReady){
+    state.finalReady = isReady;
+    if (isReady){
+      checkBtn.textContent = 'нажми ДАЛЕЕ на панели управленя';
+      checkBtn.classList.add('final-ready');
+    } else {
+      checkBtn.textContent = 'ПРОВЕРИТЬ';
+      checkBtn.classList.remove('final-ready');
+    }
+  }
+
+  function showFinalVideo(){
+    // Сообщаем родительскому окну, что задание завершено
+    try {
+      if (window.parent !== window) {
+        window.parent.postMessage({ type: 'QUIZ_COMPLETED' }, '*');
+      }
+    } catch (e) {
+      console.log('Cannot post message to parent:', e);
+    }
+    
+    // Показываем видео
+    videoOverlay.classList.add('show');
+    videoOverlay.setAttribute('aria-hidden', 'false');
+    
+    // Запускаем видео с зацикливанием
+    finalVideo.currentTime = 0;
+    finalVideo.play().catch(e => {
+      console.warn('Autoplay blocked:', e);
+      // Показываем кнопку управления, если нужно
+      finalVideo.controls = true;
+    });
+  }
+
+  function hideFinalVideo() {
+    finalVideo.pause();
+    finalVideo.currentTime = 0;
+    videoOverlay.classList.remove('show');
+    videoOverlay.setAttribute('aria-hidden', 'true');
+  }
+
+  function enableDrag(cardEl){
+    let dragging = false;
+    let offsetX = 0;
+    let offsetY = 0;
+
+    cardEl.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      dragging = true;
+
+      ensureCardInScene(cardEl, e.clientX, e.clientY);
+      cardEl.setPointerCapture(e.pointerId);
+
+      const rect = cardEl.getBoundingClientRect();
+      offsetX = e.clientX - rect.left;
+      offsetY = e.clientY - rect.top;
+
+      cardEl.style.zIndex = 1000;
+
+      releaseCardFromAnyZone(cardEl);
+
+      // если ученик двигает — мы "сбрасываем" готовность финала
+      setFinalReady(false);
+      stopApplause();
+    });
+
+    cardEl.addEventListener('pointermove', (e) => {
+      if (!dragging) return;
+
+      const sceneRect = scene.getBoundingClientRect();
+      const x = e.clientX - sceneRect.left - offsetX;
+      const y = e.clientY - sceneRect.top  - offsetY;
+
+      cardEl.style.left = x + 'px';
+      cardEl.style.top  = y + 'px';
+
+      // hover по большой зоне
+      for (const [, zoneEl] of state.zones.entries()) zoneEl.classList.remove('hover');
+      const hit = getZoneUnderCard(cardEl);
+      if (hit) hit.zoneEl.classList.add('hover');
+    });
+
+    cardEl.addEventListener('pointerup', (e) => {
+      try {
+        if (cardEl.hasPointerCapture?.(e.pointerId)) cardEl.releasePointerCapture(e.pointerId);
+      } catch (_) {}
+
+      if (!dragging) return;
+      dragging = false;
+      cardEl.style.zIndex = '';
+
+      for (const [, zoneEl] of state.zones.entries()) zoneEl.classList.remove('hover');
+
+      const hit = getZoneUnderCard(cardEl);
+      if (hit) {
+        const zoneId = hit.id;
+
+        // если в зоне уже есть карточка — вернём её в банк
+        if (state.placed.has(zoneId)) {
+          const prev = state.placed.get(zoneId);
+          if (prev && prev !== cardEl) returnCardToBank(prev);
+        }
+
+        state.placed.set(zoneId, cardEl);
+      } else {
+        // если бросили мимо — возвращаем в банк
+        returnCardToBank(cardEl);
+      }
+    });
+
+    cardEl.addEventListener('pointercancel', (e) => {
+      dragging = false;
+      try {
+        if (cardEl.hasPointerCapture?.(e.pointerId)) cardEl.releasePointerCapture(e.pointerId);
+      } catch (_) {}
+      cardEl.style.zIndex = '';
+      for (const [, zoneEl] of state.zones.entries()) zoneEl.classList.remove('hover');
+    });
+  }
+
+  cards.forEach(enableDrag);
+
+  // --- КНОПКИ ---
+  resetBtn.addEventListener('click', () => {
+    hideFinalVideo();
+    stopApplause();
+    setFinalReady(false);
+
+    // очистить зоны
+    state.placed.clear();
+    for (const [, zoneEl] of state.zones.entries()) clearZoneClasses(zoneEl);
+
+    // вернуть все карточки в банк
+    cards.forEach(returnCardToBank);
+
+    setScoreText(0);
+  });
+
+  checkBtn.addEventListener('click', () => {
+    // если уже готов финал — показываем финальное видео
+    if (state.finalReady){
+      showFinalVideo();
+      return;
+    }
+
+    stopApplause();
+
+    // подсветка зон по результату
+    for (const [, zoneEl] of state.zones.entries()) clearZoneClasses(zoneEl);
+
+    for (const [zoneId, zoneEl] of state.zones.entries()) {
+      const cardEl = state.placed.get(zoneId);
+      if (!cardEl) zoneEl.classList.add('wrong');
+      else markZone(zoneEl, cardEl);
+    }
+
+    const ok = computeScore();
+    setScoreText(ok);
+
+    // ВАЖНО: финал только если заполнены ВСЕ 8 и все верно
+    if (ok === 8 && state.placed.size === 8){
+      setFinalReady(true);
+      playApplauseOnce();
+    } else {
+      setFinalReady(false);
+    }
+  });
+
+  videoClose.addEventListener('click', () => {
+    hideFinalVideo();
+  });
+  
+  videoOverlay.addEventListener('click', (e) => {
+    if (e.target === videoOverlay) hideFinalVideo();
+  });
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') hideFinalVideo();
+  });
+
+  function init(){
+    renderZones();
+  }
+
+  if (bg.complete) init();
+  else bg.addEventListener('load', init);
+
+  window.addEventListener('resize', () => {
+    renderZones();
+  });
+</script>
+
+</body>
+</html>
