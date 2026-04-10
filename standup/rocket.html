@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Космическая игра: Предлоги 🚀</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background: #000;
+            font-family: 'Arial', sans-serif;
+            cursor: none;
+        }
+        
+        #gameCanvas {
+            display: block;
+            background: linear-gradient(to bottom, #0a0a2e 0%, #1a1a4e 50%, #0a0a2e 100%);
+        }
+        
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: #fff;
+            font-size: 24px;
+            text-shadow: 0 0 10px #00ffff;
+            z-index: 10;
+            pointer-events: none;
+            max-width: 600px;
+        }
+        
+        #instruction {
+            font-size: 18px;
+            margin-top: 10px;
+            color: #ffff00;
+            font-weight: bold;
+        }
+        
+        #levelInfo {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: #00ffff;
+            font-size: 28px;
+            font-weight: bold;
+            text-shadow: 0 0 15px #00ffff;
+            z-index: 10;
+        }
+        
+        #gameOver, #levelComplete {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            padding: 40px;
+            border-radius: 20px;
+            border: 3px solid #00ffff;
+            text-align: center;
+            color: #fff;
+            display: none;
+            z-index: 20;
+            max-width: 600px;
+        }
+        
+        #gameOver h1, #levelComplete h1 {
+            color: #00ffff;
+            margin-bottom: 20px;
+            font-size: 36px;
+        }
+        
+        #gameOver button, #levelComplete button {
+            margin-top: 15px;
+            padding: 15px 30px;
+            font-size: 18px;
+            background: #00ffff;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            pointer-events: all;
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        
+        #gameOver button:hover, #levelComplete button:hover {
+            background: #00cccc;
+        }
+        
+        .nextLevelBtn {
+            background: #00ff00 !important;
+        }
+        
+        .nextLevelBtn:hover {
+            background: #00cc00 !important;
+        }
+        
+        #explanation, #levelMessage {
+            text-align: left;
+            line-height: 1.6;
+        }
+        
+        #soundToggle {
+            position: absolute;
+            top: 20px;
+            right: 250px;
+            color: #00ffff;
+            font-size: 32px;
+            cursor: pointer;
+            z-index: 10;
+            pointer-events: all;
+            text-shadow: 0 0 10px #00ffff;
+        }
+    </style>
+</head>
+<body>
+    <div id="ui">
+        <div>⭐ СЧЁТ: <span id="score">0</span> / <span id="totalCorrect">4</span></div>
+        <div id="instruction">📝 Загрузка...</div>
+    </div>
+    
+    <div id="soundToggle" onclick="toggleSound()">🔊</div>
+    
+    <div id="levelInfo">УРОВЕНЬ <span id="currentLevel">1</span> / 5</div>
+    
+    <div id="levelComplete">
+        <h1>🎉 УРОВЕНЬ ПРОЙДЕН!</h1>
+        <p id="levelScore" style="font-size: 20px;">Счёт: 4 / 4</p>
+        <div id="levelMessage" style="margin: 20px 0; font-size: 16px;"></div>
+        <button id="nextLevelBtn" class="nextLevelBtn" onclick="nextLevel()">СЛЕДУЮЩИЙ УРОВЕНЬ →</button>
+        <button id="restartBtn" onclick="restartLevel()">ПОВТОРИТЬ УРОВЕНЬ</button>
+    </div>
+    
+    <div id="gameOver">
+        <h1 id="gameOverText">💥 ОШИБКА!</h1>
+        <p id="finalScore" style="font-size: 20px;">Счёт: 0</p>
+        <div id="explanation" style="margin: 20px 0; font-size: 15px;"></div>
+        <button onclick="restartLevel()">ПОВТОРИТЬ УРОВЕНЬ</button>
+        <button onclick="backToMenu()">В МЕНЮ</button>
+    </div>
+    
+    <canvas id="gameCanvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        
+        // АУДИО СИСТЕМА
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        const audioContext = new AudioContext();
+        let soundEnabled = true;
+        
+        // Звук взрыва (петарда)
+        function playExplosionSound() {
+            if (!soundEnabled) return;
+            
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            const noiseBuffer = audioContext.createBuffer(1, audioContext.sampleRate * 0.5, audioContext.sampleRate);
+            const output = noiseBuffer.getChannelData(0);
+            
+            for (let i = 0; i < noiseBuffer.length; i++) {
+                output[i] = Math.random() * 2 - 1;
+            }
+            
+            const noiseSource = audioContext.createBufferSource();
+            noiseSource.buffer = noiseBuffer;
+            
+            const noiseFilter = audioContext.createBiquadFilter();
+            noiseFilter.type = 'lowpass';
+            noiseFilter.frequency.value = 1000;
+            
+            const noiseGain = audioContext.createGain();
+            noiseGain.gain.setValueAtTime(0.5, audioContext.currentTime);
+            noiseGain.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+            
+            noiseSource.connect(noiseFilter);
+            noiseFilter.connect(noiseGain);
+            noiseGain.connect(audioContext.destination);
+            
+            noiseSource.start(0);
+            
+            oscillator.type = 'sawtooth';
+            oscillator.frequency.setValueAtTime(100, audioContext.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(50, audioContext.currentTime + 0.3);
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.start(0);
+            oscillator.stop(audioContext.currentTime + 0.5);
+        }
+        
+        // Звук успеха
+        function playSuccessSound() {
+            if (!soundEnabled) return;
+            
+            const oscillator1 = audioContext.createOscillator();
+            const oscillator2 = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator1.type = 'sine';
+            oscillator1.frequency.setValueAtTime(523.25, audioContext.currentTime);
+            oscillator1.frequency.exponentialRampToValueAtTime(659.25, audioContext.currentTime + 0.1);
+            
+            oscillator2.type = 'sine';
+            oscillator2.frequency.setValueAtTime(659.25, audioContext.currentTime);
+            oscillator2.frequency.exponentialRampToValueAtTime(783.99, audioContext.currentTime + 0.1);
+            
+            gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.3, audioContext.currentTime + 0.05);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.3);
+            
+            oscillator1.connect(gainNode);
+            oscillator2.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator1.start(0);
+            oscillator2.start(0);
+            oscillator1.stop(audioContext.currentTime + 0.3);
+            oscillator2.stop(audioContext.currentTime + 0.3);
+        }
+        
+        // Звук победы
+        function playVictorySound() {
+            if (!soundEnabled) return;
+            
+            const notes = [523.25, 659.25, 783.99, 1046.50];
+            notes.forEach((freq, index) => {
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.type = 'triangle';
+                oscillator.frequency.value = freq;
+                
+                const startTime = audioContext.currentTime + index * 0.1;
+                gainNode.gain.setValueAtTime(0, startTime);
+                gainNode.gain.linearRampToValueAtTime(0.2, startTime + 0.05);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.3);
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.start(startTime);
+                oscillator.stop(startTime + 0.3);
+            });
+        }
+        
+        // Включение/выключение звука
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            document.getElementById('soundToggle').textContent = soundEnabled ? '🔊' : '🔇';
+        }
+        
+        // Функция для получения правильного написания (без косой черты)
+        function getCorrectSpelling(wordWithSlash, isTogether) {
+            if (isTogether) {
+                // Для слитных - убираем косую черту
+                return wordWithSlash.replace(/\//g, '');
+            } else {
+                // Для раздельных - заменяем косую черту на пробел
+                return wordWithSlash.replace(/\//g, ' ');
+            }
+        }
+        
+        const rocketImage = new Image();
+        rocketImage.src = 'rocket.png';
+        let rocketImageLoaded = false;
+        
+        const stationImages = {};
+        let imagesLoaded = 0;
+        let gameStarted = false;
+        
+        setTimeout(() => {
+            if (!gameStarted) {
+                startGame();
+            }
+        }, 3000);
+        
+        rocketImage.onload = function() {
+            rocketImageLoaded = true;
+            checkAllLoaded();
+        };
+        
+        rocketImage.onerror = function() {
+            rocketImageLoaded = false;
+            checkAllLoaded();
+        };
+        
+        const stationImageNames = ['st1', 'st2', 'st3', 'st4', 'st5'];
+        
+        stationImageNames.forEach((name) => {
+            const img = new Image();
+            img.src = `${name}.png`;
+            img.onload = function() {
+                stationImages[name] = img;
+                imagesLoaded++;
+                checkAllLoaded();
+            };
+            img.onerror = function() {
+                imagesLoaded++;
+                checkAllLoaded();
+            };
+        });
+        
+        function checkAllLoaded() {
+            if (!gameStarted) {
+                startGame();
+            }
+        }
+        
+        function startGame() {
+            gameStarted = true;
+            document.getElementById('instruction').textContent = '📝 Собери предлоги, которые пишутся СЛИТНО';
+            createStations();
+            gameLoop();
+        }
+        
+        let currentLevel = 1;
+        let score = 0;
+        let gameOver = false;
+        let levelComplete = false;
+        
+        // Предлоги с косыми чертами (для отображения на станциях)
+        const togetherPrepositions = [
+            'В/СЛЕДСТВИЕ', 'НА/ВСТРЕЧУ', 'В/ВИДУ', 'НА/ПОДОБИЕ', 'В/МЕСТО', 'В/РОДЕ',
+            'В/ЗАМЕН', 'В/СЛЕД ЗА', 'НА/ПЕРЕКОР', 'НА/СЧЁТ', 'НА/ПРОТИВ', 'ПО/МИМО',
+            'В/НУТРИ', 'В/ПЕРЕДИ', 'ПО/ЗАДИ', 'ПО/СРЕДИ', 'В/БЛИЗИ', 'НА/КАНУНЕ',
+            'ПО/СЕРЕДИНЕ', 'НЕ/СМОТРЯ НА', 'НЕ/ВЗИРАЯ НА', 'ВО/ПРЕКИ', 'ПО/СРЕДСТВОМ'
+        ];
+        
+        const separatePrepositions = [
+            'В/ОТЛИЧИЕ ОТ', 'В/СВЯЗИ С', 'В/ВИДЕ', 'В/ТЕЧЕНИЕ', 'В/ПРОДОЛЖЕНИЕ',
+            'В/ЗАКЛЮЧЕНИЕ', 'В/ЦЕЛЯХ', 'В/ОБЛАСТИ', 'В/МЕРУ', 'ВО/ИЗБЕЖАНИЕ','В/СЛУЧАЕ',
+            'В/СООТВЕТСТВИИ С', 'В/СИЛУ', 'В/ЗАВИСИМОСТИ ОТ', 'В/ОТНОШЕНИИ',
+            'В/ЛИЦЕ', 'В/РАМКАХ', 'ПО/МЕРЕ', 'ПО/ПРИЧИНЕ', 'НА/ПРОТЯЖЕНИИ', 'ПО/ПОВОДУ',
+            'ЗА/СЧЁТ', 'ЗА/ИСКЛЮЧЕНИЕМ', 'С/ПОМОЩЬЮ', 'В/ПРЕДДВЕРИИ', 'С/ЦЕЛЬЮ', 'В/СЧЁТ'
+        ];
+        
+        const levelConfigs = [
+            {
+                level: 1,
+                task: 'together',
+                taskText: '📝 Собери предлоги, которые пишутся СЛИТНО',
+                correctCount: 4,
+                wrongCount: 3,
+                stationImage: 'st1',
+                textOffsetY: -5
+            },
+            {
+                level: 2,
+                task: 'separate',
+                taskText: '📝 Собери предлоги, которые пишутся РАЗДЕЛЬНО',
+                correctCount: 4,
+                wrongCount: 3,
+                stationImage: 'st2',
+                textOffsetY: -35
+            },
+            {
+                level: 3,
+                task: 'together',
+                taskText: '📝 Собери предлоги, которые пишутся СЛИТНО',
+                correctCount: 5,
+                wrongCount: 3,
+                stationImage: 'st3',
+                textOffsetY: -5
+            },
+            {
+                level: 4,
+                task: 'separate',
+                taskText: '📝 Собери предлоги, которые пишутся РАЗДЕЛЬНО',
+                correctCount: 4,
+                wrongCount: 4,
+                stationImage: 'st4',
+                textOffsetY: -5
+            },
+            {
+                level: 5,
+                task: 'together',
+                taskText: '📝 Собери предлоги, которые пишутся СЛИТНО',
+                correctCount: 5,
+                wrongCount: 3,
+                stationImage: 'st5',
+                textOffsetY: -5
+            }
+        ];
+        
+        let currentLevelData = null;
+        
+        let rocket = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            targetX: canvas.width / 2,
+            targetY: canvas.height / 2,
+            angle: -45,
+            speed: 8
+        };
+        
+        let sparks = [];
+        let explosions = [];
+        let stations = [];
+        
+        let stars = [];
+        for (let i = 0; i < 200; i++) {
+            stars.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                size: Math.random() * 2,
+                twinkle: Math.random() * Math.PI * 2
+            });
+        }
+        
+        function getRandomItems(arr, count) {
+            const shuffled = [...arr].sort(() => Math.random() - 0.5);
+            return shuffled.slice(0, count);
+        }
+        
+        function createLevelData() {
+            const config = levelConfigs.find(c => c.level === currentLevel);
+            
+            let correctWords, wrongWords;
+            
+            if (config.task === 'together') {
+                correctWords = getRandomItems(togetherPrepositions, config.correctCount);
+                wrongWords = getRandomItems(separatePrepositions, config.wrongCount);
+            } else {
+                correctWords = getRandomItems(separatePrepositions, config.correctCount);
+                wrongWords = getRandomItems(togetherPrepositions, config.wrongCount);
+            }
+            
+            const explanation = {};
+            wrongWords.forEach(word => {
+                if (config.task === 'together') {
+                    // Показываем правильное написание (раздельно)
+                    explanation[word] = `${getCorrectSpelling(word, false)} - пишется РАЗДЕЛЬНО`;
+                } else {
+                    // Показываем правильное написание (слитно)
+                    explanation[word] = `${getCorrectSpelling(word, true)} - пишется СЛИТНО`;
+                }
+            });
+            
+            currentLevelData = {
+                correct: correctWords,
+                wrong: wrongWords,
+                task: config.task,
+                taskText: config.taskText,
+                stationImage: config.stationImage,
+                textOffsetY: config.textOffsetY,
+                explanation: explanation,
+                isTogetherTask: config.task === 'together'
+            };
+            
+            document.getElementById('instruction').textContent = config.taskText;
+            document.getElementById('totalCorrect').textContent = config.correctCount;
+        }
+        
+        function createStations() {
+            stations = [];
+            createLevelData();
+            
+            const allWords = [
+                ...currentLevelData.correct.map(w => ({ word: w, correct: true })),
+                ...currentLevelData.wrong.map(w => ({ word: w, correct: false }))
+            ];
+            
+            allWords.sort(() => Math.random() - 0.5);
+            
+            const positions = [];
+            const margin = 150;
+            const totalStations = allWords.length;
+            
+            for (let i = 0; i < totalStations; i++) {
+                let x, y, tooClose;
+                let attempts = 0;
+                
+                do {
+                    tooClose = false;
+                    x = margin + Math.random() * (canvas.width - 2 * margin);
+                    y = margin + Math.random() * (canvas.height - 2 * margin);
+                    
+                    for (let pos of positions) {
+                        const dx = x - pos.x;
+                        const dy = y - pos.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        if (distance < 200) {
+                            tooClose = true;
+                            break;
+                        }
+                    }
+                    
+                    attempts++;
+                } while (tooClose && attempts < 100);
+                
+                positions.push({ x, y });
+            }
+            
+            for (let i = 0; i < totalStations; i++) {
+                stations.push({
+                    x: positions[i].x,
+                    y: positions[i].y,
+                    word: allWords[i].word,
+                    correct: allWords[i].correct,
+                    visited: false,
+                    radius: 100,
+                    width: 220,
+                    height: 140
+                });
+            }
+        }
+        
+        function createSpark(x, y, angle) {
+            const spread = 0.5;
+            sparks.push({
+                x: x,
+                y: y,
+                vx: Math.cos(angle) * 3 + (Math.random() - 0.5) * spread,
+                vy: Math.sin(angle) * 3 + (Math.random() - 0.5) * spread,
+                life: 1,
+                decay: 0.02 + Math.random() * 0.02
+            });
+        }
+        
+        function createExplosion(x, y) {
+            for (let i = 0; i < 50; i++) {
+                const angle = (Math.PI * 2 * i) / 50;
+                const speed = 2 + Math.random() * 8;
+                explosions.push({
+                    x: x,
+                    y: y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    life: 1,
+                    decay: 0.015,
+                    color: `hsl(${Math.random() * 60}, 100%, 50%)`,
+                    size: 5 + Math.random() * 10
+                });
+            }
+        }
+        
+        function drawRocket(x, y, angle) {
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(angle * Math.PI / 180);
+            
+            if (rocketImageLoaded && rocketImage.complete) {
+                const rocketSize = 80;
+                ctx.drawImage(rocketImage, -rocketSize / 2, -rocketSize / 2, rocketSize, rocketSize);
+            } else {
+                ctx.fillStyle = '#FFA500';
+                ctx.beginPath();
+                ctx.ellipse(0, 0, 30, 15, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = '#FF6347';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                ctx.fillStyle = '#87CEEB';
+                ctx.beginPath();
+                ctx.arc(-5, -5, 8, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            ctx.restore();
+        }
+        
+        function drawStation(station) {
+            ctx.save();
+            ctx.translate(station.x, station.y);
+            
+            const img = currentLevelData ? stationImages[currentLevelData.stationImage] : null;
+            const textY = currentLevelData ? currentLevelData.textOffsetY : -5;
+            
+            if (img && img.complete) {
+                ctx.drawImage(img, -station.width / 2, -station.height / 2, station.width, station.height);
+            } else {
+                ctx.strokeStyle = '#4a9eff';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.arc(0, 0, station.radius, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                ctx.fillStyle = 'rgba(74, 158, 255, 0.2)';
+                ctx.beginPath();
+                ctx.arc(0, 0, station.radius * 0.7, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            ctx.font = 'bold 18px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            
+            ctx.strokeStyle = '#FFFFFF';
+            ctx.lineWidth = 4;
+            ctx.strokeText(station.word, 0, textY);
+            
+            ctx.fillStyle = '#000080';
+            ctx.fillText(station.word, 0, textY);
+            
+            if (station.visited) {
+                ctx.fillStyle = station.correct ? '#00FF00' : '#FF0000';
+                ctx.beginPath();
+                ctx.arc(0, station.height / 2 + 20, 12, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.fillStyle = '#FFFFFF';
+                ctx.font = 'bold 16px Arial';
+                ctx.fillText(station.correct ? '✓' : '✗', 0, station.height / 2 + 20);
+            }
+            
+            ctx.restore();
+        }
+        
+        function drawStars() {
+            stars.forEach(star => {
+                star.twinkle += 0.05;
+                const brightness = 0.5 + Math.sin(star.twinkle) * 0.5;
+                ctx.fillStyle = `rgba(255, 255, 255, ${brightness})`;
+                ctx.beginPath();
+                ctx.arc(star.x, star.y, star.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+        
+        function updateAndDrawSparks() {
+            sparks = sparks.filter(spark => {
+                spark.x += spark.vx;
+                spark.y += spark.vy;
+                spark.life -= spark.decay;
+                
+                if (spark.life > 0) {
+                    ctx.fillStyle = `rgba(255, 255, 200, ${spark.life})`;
+                    ctx.beginPath();
+                    ctx.arc(spark.x, spark.y, 3 * spark.life, 0, Math.PI * 2);
+                    ctx.fill();
+                    return true;
+                }
+                return false;
+            });
+        }
+        
+        function updateAndDrawExplosions() {
+            explosions = explosions.filter(exp => {
+                exp.x += exp.vx;
+                exp.y += exp.vy;
+                exp.vx *= 0.98;
+                exp.vy *= 0.98;
+                exp.life -= exp.decay;
+                
+                if (exp.life > 0) {
+                    ctx.fillStyle = exp.color.replace(')', `, ${exp.life})`);
+                    ctx.beginPath();
+                    ctx.arc(exp.x, exp.y, exp.size * exp.life, 0, Math.PI * 2);
+                    ctx.fill();
+                    return true;
+                }
+                return false;
+            });
+        }
+        
+        function checkStationHit() {
+            if (!currentLevelData) return;
+            
+            stations.forEach(station => {
+                const dx = rocket.x - station.x;
+                const dy = rocket.y - station.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < station.radius && !station.visited) {
+                    station.visited = true;
+                    
+                    if (station.correct) {
+                        score++;
+                        document.getElementById('score').textContent = score;
+                        playSuccessSound();
+                        
+                        if (score === currentLevelData.correct.length) {
+                            setTimeout(() => {
+                                playVictorySound();
+                                showLevelComplete();
+                            }, 500);
+                        }
+                    } else {
+                        createExplosion(station.x, station.y);
+                        playExplosionSound();
+                        setTimeout(() => {
+                            showGameOver(station);
+                        }, 1000);
+                    }
+                }
+            });
+        }
+        
+        function showLevelComplete() {
+            levelComplete = true;
+            
+            document.getElementById('levelScore').textContent = `Счёт: ${score} / ${currentLevelData.correct.length}`;
+            
+            let message = '<strong style="color: #00ff00;">Отлично!</strong><br><br>';
+            message += `Ты правильно собрал все предлоги:<br><br>`;
+            currentLevelData.correct.forEach(word => {
+                // Показываем БЕЗ косой черты - правильное написание
+                const correctSpelling = getCorrectSpelling(word, currentLevelData.isTogetherTask);
+                message += `✅ <strong>${correctSpelling}</strong><br>`;
+            });
+            
+            const restartBtn = document.getElementById('restartBtn');
+            
+            if (currentLevel >= 5) {
+                message += '<br><strong style="color: #ffff00; font-size: 20px;">🎉 ПОЗДРАВЛЯЕМ! ВЫ ПРОШЛИ ВСЕ 5 УРОВНЕЙ! 🎉</strong>';
+                document.getElementById('nextLevelBtn').style.display = 'none';
+                restartBtn.textContent = '🔄 ИГРАТЬ СНАЧАЛА';
+                restartBtn.onclick = backToMenu;
+            } else {
+                document.getElementById('nextLevelBtn').style.display = 'inline-block';
+                restartBtn.textContent = '↻ ПОВТОРИТЬ УРОВЕНЬ';
+                restartBtn.onclick = restartLevel;
+            }
+            
+            document.getElementById('levelMessage').innerHTML = message;
+            document.getElementById('levelComplete').style.display = 'block';
+        }
+        
+        function showGameOver(station) {
+            gameOver = true;
+            
+            document.getElementById('gameOverText').textContent = '💥 ОШИБКА!';
+            document.getElementById('finalScore').textContent = `Счёт: ${score} / ${currentLevelData.correct.length}`;
+            
+            // Определяем, является ли задание на слитное написание
+            const isStationCorrectType = currentLevelData.isTogetherTask;
+            
+            let explanationHTML = 
+                `<strong style="color: #ff6666;">${station.word}</strong><br>` +
+                `<strong>${currentLevelData.explanation[station.word]}</strong><br><br>` +
+                `<strong style="color: #00ff00;">Правильные ответы:</strong><br>`;
+            
+            currentLevelData.correct.forEach(word => {
+                // Показываем правильное написание без косой черты
+                const correctSpelling = getCorrectSpelling(word, isStationCorrectType);
+                explanationHTML += `✅ ${correctSpelling}<br>`;
+            });
+            
+            document.getElementById('explanation').innerHTML = explanationHTML;
+            document.getElementById('gameOver').style.display = 'block';
+        }
+        
+        function nextLevel() {
+            if (currentLevel < 5) {
+                currentLevel++;
+                document.getElementById('currentLevel').textContent = currentLevel;
+                restartLevel();
+            }
+        }
+        
+        function restartLevel() {
+            score = 0;
+            gameOver = false;
+            levelComplete = false;
+            document.getElementById('score').textContent = score;
+            document.getElementById('gameOver').style.display = 'none';
+            document.getElementById('levelComplete').style.display = 'none';
+            explosions = [];
+            createStations();
+        }
+        
+        function backToMenu() {
+            currentLevel = 1;
+            document.getElementById('currentLevel').textContent = currentLevel;
+            restartLevel();
+        }
+        
+        function gameLoop() {
+            ctx.fillStyle = 'rgba(10, 10, 46, 0.3)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            drawStars();
+            if (stations.length > 0) {
+                stations.forEach(station => drawStation(station));
+            }
+            
+            const dx = rocket.targetX - rocket.x;
+            const dy = rocket.targetY - rocket.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance > 5) {
+                rocket.x += (dx / distance) * rocket.speed;
+                rocket.y += (dy / distance) * rocket.speed;
+                rocket.angle = Math.atan2(dy, dx) * 180 / Math.PI;
+                
+                for (let i = 0; i < 3; i++) {
+                    createSpark(rocket.x - 30, rocket.y, rocket.angle * Math.PI / 180 + Math.PI);
+                }
+            }
+            
+            checkStationHit();
+            updateAndDrawSparks();
+            if (!gameOver) {
+                updateAndDrawExplosions();
+            }
+            
+            if (!gameOver || Math.floor(Date.now() / 200) % 2 === 0) {
+                drawRocket(rocket.x, rocket.y, rocket.angle);
+            }
+            
+            requestAnimationFrame(gameLoop);
+        }
+        
+        canvas.addEventListener('click', (e) => {
+            if (!gameOver && !levelComplete) {
+                rocket.targetX = e.clientX;
+                rocket.targetY = e.clientY;
+            }
+        });
+        
+        canvas.addEventListener('mousemove', (e) => {
+            if (!gameOver && !levelComplete) {
+                rocket.targetX = e.clientX;
+                rocket.targetY = e.clientY;
+            }
+        });
+        
+        window.addEventListener('resize', () => {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+        
+        startGame();
+    </script>
+</body>
+</html>

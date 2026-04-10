@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Космическая миссия: Омонимия предлогов</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #0a0a23;
+            font-family: 'Orbitron', Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            color: white;
+        }
+
+        #game-container {
+            width: 1024px;
+            height: 768px;
+            position: relative;
+            background: radial-gradient(circle at 30% 30%, #0a0a23 0%, #0d0d30 70%, #121240 100%);
+            border: 2px solid #00c6ff;
+            box-shadow: 0 0 30px rgba(0,198,255,0.3);
+            overflow: hidden;
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 3s infinite ease-in-out;
+        }
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
+        }
+
+        #start-button {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 24px;
+            font-size: 18px;
+            background: linear-gradient(45deg, #00c6ff, #0072ff);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 100;
+            box-shadow: 0 0 15px rgba(0,198,255,0.5);
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        #start-button:hover {
+            background: linear-gradient(45deg, #0072ff, #00c6ff);
+            box-shadow: 0 0 25px rgba(0,198,255,0.8);
+        }
+
+        .score-counter {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 20px;
+            padding: 13px 27px;
+            box-shadow: 0 5px 17px rgba(0,0,0,0.3);
+            z-index: 3000;
+            font-family: Arial, sans-serif;
+            font-size: 24px;
+            font-weight: bold;
+            display: flex;
+            gap: 20px;
+            border: 2px solid #667eea;
+        }
+        .correct-score { color: #00ffaa; }
+        .incorrect-score { color: #ff5555; }
+
+        .frog-container {
+            position: absolute;
+            width: 120px;
+            height: 100px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            z-index: 10;
+        }
+        .frog {
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+            transform-origin: bottom center;
+            filter: drop-shadow(0 0 5px #00c6ff);
+        }
+        .frog img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 5px;
+        }
+        .frog.growing {
+            transform: scale(1.3) translateY(-20px);
+            animation: bounce 0.5s forwards;
+        }
+        .frog.disappearing {
+            opacity: 0;
+            animation: teleport 0.8s forwards;
+        }
+        @keyframes bounce {
+            0% { transform: scale(1) translateY(0); }
+            40% { transform: scale(1.4) translateY(-30px); }
+            100% { transform: scale(1) translateY(0); }
+        }
+        @keyframes teleport {
+            0% { opacity: 1; transform: scale(1) translateY(0); }
+            50% { opacity: 0.5; transform: scale(1.2) rotate(10deg); }
+            100% { opacity: 0; transform: scale(0) rotate(360deg); }
+        }
+
+        .question-popup {
+            position: absolute;
+            top: 35%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.85);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            font-size: 22px;
+            text-align: center;
+            z-index: 150;
+            min-width: 400px;
+            max-width: 85%;
+            border: 2px solid #00c6ff;
+            box-shadow: 0 0 20px rgba(0,198,255,0.4);
+        }
+        .question-text {
+            font-size: 22px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #fff;
+        }
+        .options-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .option {
+            padding: 16px;
+            background: #0d0d30;
+            color: #00c6ff;
+            border: 1px solid #00c6ff;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+        .option:hover {
+            background: #00c6ff;
+            color: #0d0d30;
+            transform: translateY(-2px);
+        }
+        .option.correct {
+            border-color: #00ffaa !important;
+            color: #00ffaa !important;
+            background: rgba(0,255,170,0.1) !important;
+        }
+        .option.incorrect {
+            border-color: #ff5555 !important;
+            color: #ff5555 !important;
+            background: rgba(255,85,85,0.1) !important;
+            animation: shake 0.5s;
+        }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-6px); }
+            75% { transform: translateX(6px); }
+        }
+
+        #end-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 25px;
+            border-radius: 15px;
+            text-align: center;
+            font-size: 20px;
+            font-weight: bold;
+            display: none;
+            z-index: 200;
+            border: 2px solid #00c6ff;
+            box-shadow: 0 0 30px rgba(0,198,255,0.5);
+            color: #fff;
+        }
+        .end-buttons {
+            margin-top: 20px;
+        }
+        .end-button, .next-slide-button, .review-button {
+            padding: 12px 24px;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 16px;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+        .end-button {
+            background: linear-gradient(45deg, #00c6ff, #0072ff);
+        }
+        .next-slide-button {
+            background: linear-gradient(45deg, #ff5555, #ff2222);
+        }
+        .review-button {
+            background: linear-gradient(45deg, #ffa726, #fb8c00);
+        }
+
+        /* 🔹 Финальное поздравление */
+        #mission-complete {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 20, 40, 0.92);
+            padding: 30px;
+            border-radius: 18px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            display: none;
+            z-index: 250;
+            border: 3px solid #00ffaa;
+            box-shadow: 0 0 40px rgba(0, 255, 170, 0.5);
+            color: #00ffaa;
+            max-width: 80%;
+            min-width: 400px;
+        }
+        #mission-complete .subtitle {
+            font-size: 18px;
+            color: #a0ffa0;
+            margin-top: 12px;
+            font-weight: normal;
+        }
+        #mission-complete .final-buttons {
+            margin-top: 25px;
+        }
+
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&display=swap');
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <audio id="quack-sound" src="https://digipad.s3.sbg.io.cloud.ovh.net/735495/dddd-ddndnddd_ws3y4a5j0i.mp3" preload="auto"></audio>
+        <audio id="explosion-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-arcade-game-explosion-2759.mp3" preload="auto"></audio>
+        <audio id="teleport-sound" src="https://assets.mixkit.co/sfx/preview/mixkit-arcade-game-jump-coin-216.wav" preload="auto"></audio>
+
+        <button id="start-button">🚀 ЗАПУСТИТЬ МИССИЮ 🚀</button>
+        <div class="score-counter">
+            <span class="correct-score">ВЕРНО: 0</span>
+            <span class="incorrect-score">НЕВЕРНО: 0</span>
+        </div>
+
+        <div id="end-message">
+            <div id="final-score">🎉 МИССИЯ ВЫПОЛНЕНА!<br><span style="color:#00ffaa">Верно:</span> 0<br><span style="color:#ff5555">Неверно:</span> 0</div>
+            <div class="end-buttons">
+                <button id="end-button" class="end-button">🔁 ПЕРЕЗАПУСТИТЬ</button>
+                <button id="next-slide-button" class="next-slide-button">🌌 нажми ДАЛЕЕ</button>
+                <button id="review-button" class="review-button">🔍 РАБОТА НАД ОШИБКАМИ</button>
+            </div>
+        </div>
+
+        <div id="mission-complete">
+            <div>🎉 ПОЗДРАВЛЯЕМ!</div>
+            <div class="subtitle">МИССИЯ ПО ОМОНИМИИ ПРЕДЛОГОВ ЗАВЕРШЕНА!</div>
+            <div class="final-buttons">
+                <button id="final-restart" class="end-button">🔁 ПЕРЕЗАПУСТИТЬ</button>
+                <button id="final-next" class="next-slide-button">🌌 ПРОДОЛЖИТЬ ПУТЕШЕСТВИЕ</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function createElement(tag, className, innerHTML) {
+            const el = document.createElement(tag);
+            if (className) el.className = className;
+            if (innerHTML) el.innerHTML = innerHTML;
+            return el;
+        }
+
+        const container = document.getElementById('game-container');
+        for (let i = 0; i < 150; i++) {
+            const star = createElement('div', 'star');
+            star.style.width = Math.random() * 2 + 'px';
+            star.style.height = star.style.width;
+            star.style.left = Math.random() * 100 + '%';
+            star.style.top = Math.random() * 100 + '%';
+            star.style.animationDelay = Math.random() * 3 + 's';
+            container.appendChild(star);
+        }
+
+        const questions = [
+            { question: "Особенности В ТЕЧЕНИИ верхних слоёв атмосферы", answers: ["предлог", "существительное"], correct: 1 },
+            { question: "Мы заинтересованы В ПРОДОЛЖЕНИИ миссии", answers: ["предлог", "существительное"], correct: 1 },
+            { question: "Эта теория зиждется НА ПОДОБИИ инопланетных существ", answers: ["предлог", "существительное"], correct: 1 },
+            { question: "В СЛЕДСТВИИ по делу об исчезновении скафандров лягушки — свидетели", answers: ["предлог", "существительное"], correct: 1 },
+            { question: "Устремляясь НАВСТРЕЧУ новому дню", answers: ["предлог", "существительное"], correct: 0 },
+            { question: "ВВИДУ  отсутствия  связи", answers: ["предлог", "существительное"], correct: 0 },
+            { question: "Оказались В ЗАКЛЮЧЕНИИ на орбитальной станции", answers: ["предлог", "существительное"], correct: 1 },
+            { question: "В ЗАКЛЮЧЕНИЕ сеанса связи астронавт передал привет", answers: ["предлог", "существительное"], correct: 0 },
+            { question: "ВСЛЕДСТВИЕ магнитной бури", answers: ["предлог", "существительное"], correct: 0 },
+            { question: "Наткнулись НА ПОДОБИЕ русел древних рек", answers: ["предлог", "существительное"], correct: 1 },
+            { question: "В СЛЕД, оставленный кометой", answers: ["предлог", "существительное"], correct: 1 },
+            { question: "Сигнал передавался В ТЕЧЕНИЕ нескольких минут", answers: ["предлог", "существительное"], correct: 0 },
+            { question: "Летим ВСЛЕД за астероидом", answers: ["предлог", "существительное"], correct: 0 },
+            { question: "Устремляясь НА ВСТРЕЧУ с неизведанным", answers: ["предлог", "существительное"], correct: 1 },
+            { question: "В ПРОДОЛЖЕНИЕ месяца наблюдали за вспышкой", answers: ["предлог", "существительное"], correct: 0 }
+        ];
+
+        let containers = [];
+        let correctScore = 0;
+        let incorrectScore = 0;
+        let gameStarted = false;
+        let animationStarted = false;
+        let usedQuestions = [];
+        let mistakes = [];
+
+        const gameRoot = container;
+        const quackSound = document.getElementById('quack-sound');
+        const explosionSound = document.getElementById('explosion-sound');
+        const teleportSound = document.getElementById('teleport-sound');
+        const startButton = document.getElementById('start-button');
+        const scoreCorrect = document.querySelector('.correct-score');
+        const scoreIncorrect = document.querySelector('.incorrect-score');
+
+        function updateScore() {
+            scoreCorrect.textContent = `ВЕРНО: ${correctScore}`;
+            scoreIncorrect.textContent = `НЕВЕРНО: ${incorrectScore}`;
+        }
+
+        function createFrogs() {
+            containers.forEach(c => {
+                if (c.container?.parentNode) c.container.parentNode.removeChild(c.container);
+            });
+            containers = [];
+
+            // 🔹 15 ЛЯГУШЕК
+            for (let i = 0; i < 15; i++) {
+                const containerEl = createElement('div', 'frog-container');
+                containerEl.style.left = `${3 + i * 6.4}%`; // 3% → 92.6%
+                containerEl.style.top = '35%';
+                containerEl.dataset.index = i;
+
+                const frog = createElement('div', 'frog');
+                const img = new Image();
+                img.src = 'https://wdesk.ru/_ph/147/1/821529003.jpg?1752895239';
+                img.alt = 'Космическая лягушка';
+                img.onerror = () => {
+                    frog.innerHTML = '<div style="font-size:40px;color:#00c6ff;text-shadow:0 0 8px #00c6ff">🐸🚀</div>';
+                };
+                frog.appendChild(img);
+                containerEl.appendChild(frog);
+                gameRoot.appendChild(containerEl);
+
+                containers.push({
+                    container: containerEl,
+                    frog,
+                    velocity: { x: 0, y: 0 },
+                    clicked: false,
+                    removed: false,
+                    questionIndex: i
+                });
+
+                frog.addEventListener('click', () => handleFrogClick(i));
+            }
+        }
+
+        function startGame() {
+            if (animationStarted) return;
+            gameStarted = true;
+            animationStarted = true;
+            startButton.style.display = 'none';
+
+            containers.forEach(frog => {
+                if (!frog.removed) {
+                    const left = parseFloat(frog.container.style.left) || 50;
+                    const top = 35;
+                    const centerX = 50, centerY = 25;
+                    const dx = left - centerX, dy = top - centerY;
+                    let angle = Math.atan2(dy, dx);
+                    if (Math.random() < 0.2) angle = Math.random() * 2 * Math.PI;
+                    else angle += (Math.random() - 0.5) * 0.8;
+                    const mag = 0.35 * (0.9 + Math.random() * 0.5);
+                    frog.velocity = { x: Math.cos(angle) * mag, y: Math.sin(angle) * mag };
+                }
+            });
+            animate();
+        }
+
+        function handleFrogClick(index) {
+            if (!gameStarted || containers[index].clicked || containers[index].removed) return;
+            containers[index].clicked = true;
+            containers[index].velocity = { x: 0, y: 0 };
+            containers[index].frog.classList.add('growing');
+
+            try { quackSound.currentTime = 0; quackSound.play(); } catch (e) {}
+
+            setTimeout(() => {
+                containers[index].frog.classList.remove('growing');
+                containers[index].frog.classList.add('disappearing');
+                try { teleportSound.currentTime = 0; teleportSound.play(); } catch (e) {}
+
+                let available = questions.filter((_, i) => !usedQuestions.includes(i));
+                if (available.length === 0) usedQuestions = [];
+                available = questions.filter((_, i) => !usedQuestions.includes(i));
+                const qIndex = Math.floor(Math.random() * available.length);
+                const questionData = available[qIndex];
+                const origIndex = questions.findIndex(q => q === questionData);
+                usedQuestions.push(origIndex);
+
+                const popup = createElement('div', 'question-popup');
+                popup.innerHTML = `
+                    <div class="question-text">${questionData.question}</div>
+                    <div class="options-container" id="options-${index}"></div>
+                `;
+                gameRoot.appendChild(popup);
+
+                const optionsContainer = document.getElementById(`options-${index}`);
+                questionData.answers.forEach((ans, i) => {
+                    const btn = createElement('button', 'option');
+                    btn.textContent = ans;
+                    btn.dataset.idx = i;
+                    btn.addEventListener('click', () => handleAnswer(i, questionData.correct, btn, optionsContainer, popup, index, origIndex));
+                    optionsContainer.appendChild(btn);
+                });
+            }, 400);
+        }
+
+        function handleAnswer(selected, correct, btn, options, popup, frogIndex, questionOrigIndex) {
+            if (btn.classList.contains('correct') || btn.classList.contains('incorrect')) return;
+
+            if (selected === correct) {
+                correctScore++;
+                updateScore();
+                btn.classList.add('correct');
+                options.querySelectorAll('.option').forEach((b, i) => {
+                    if (i !== correct) b.classList.add('incorrect');
+                });
+                setTimeout(() => {
+                    if (popup.parentNode) popup.parentNode.removeChild(popup);
+                    const frog = containers[frogIndex];
+                    if (frog.container.parentNode) frog.container.parentNode.removeChild(frog.container);
+                    frog.removed = true;
+                    checkGameOver();
+                }, 1500);
+            } else {
+                incorrectScore++;
+                updateScore();
+                btn.classList.add('incorrect');
+                try { explosionSound.currentTime = 0; explosionSound.play(); } catch (e) {}
+
+                mistakes.push(questionOrigIndex);
+
+                let fb = options.querySelector('.feedback');
+                if (!fb) {
+                    fb = createElement('div', 'feedback incorrect');
+                    fb.textContent = 'Неверно!';
+                    fb.style.marginTop = '15px';
+                    fb.style.padding = '10px';
+                    fb.style.borderRadius = '8px';
+                    fb.style.fontSize = '18px';
+                    fb.style.fontWeight = 'bold';
+                    fb.style.background = 'rgba(255,85,85,0.2)';
+                    fb.style.color = '#ff5555';
+                    fb.style.border = '1px solid #ff5555';
+                    options.appendChild(fb);
+                    setTimeout(() => { if (fb.parentNode) fb.parentNode.removeChild(fb); }, 2000);
+                }
+            }
+        }
+
+        function animate() {
+            if (!animationStarted) return;
+            containers.forEach(f => {
+                if (f.removed || (f.velocity.x === 0 && f.velocity.y === 0)) return;
+                let l = parseFloat(f.container.style.left) || 0;
+                let t = parseFloat(f.container.style.top) || 0;
+                l += f.velocity.x; t += f.velocity.y;
+                // 🔹 Границы для 15 лягушек
+                if (l <= 3) { f.velocity.x = Math.abs(f.velocity.x); l = 3; }
+                if (l >= 90) { f.velocity.x = -Math.abs(f.velocity.x); l = 90; }
+                if (t <= 10) { f.velocity.y = Math.abs(f.velocity.y); t = 10; }
+                if (t >= 70) { f.velocity.y = -Math.abs(f.velocity.y); t = 70; }
+                f.container.style.left = `${l}%`; f.container.style.top = `${t}%`;
+                const deg = Math.atan2(f.velocity.y, f.velocity.x) * 180 / Math.PI;
+                f.container.style.transform = `rotate(${deg}deg)`;
+            });
+            if (containers.some(c => !c.removed && !c.clicked)) requestAnimationFrame(animate);
+        }
+
+        function checkGameOver() {
+            if (containers.every(c => c.removed)) {
+                document.getElementById('final-score').innerHTML = 
+                    `🎉 МИССИЯ ВЫПОЛНЕНА!<br><span style="color:#00ffaa">Верно:</span> ${correctScore}<br><span style="color:#ff5555">Неверно:</span> ${incorrectScore}`;
+                document.getElementById('end-message').style.display = 'block';
+            }
+        }
+
+        function resetGame() {
+            correctScore = 0;
+            incorrectScore = 0;
+            updateScore();
+            gameStarted = false;
+            animationStarted = false;
+            usedQuestions = [];
+            mistakes = [];
+            containers = [];
+            document.getElementById('end-message').style.display = 'none';
+            document.getElementById('mission-complete').style.display = 'none';
+            startButton.style.display = 'block';
+            createFrogs();
+        }
+
+        function startReviewMode() {
+            if (mistakes.length === 0) {
+                alert("Поздравляем! Ошибок нет.");
+                return;
+            }
+
+            containers.forEach(c => {
+                if (c.container?.parentNode) c.container.parentNode.removeChild(c.container);
+            });
+            containers = [];
+
+            const step = mistakes.length > 9 ? 6.4 : 9;
+
+            mistakes.forEach((qIndex, i) => {
+                const containerEl = createElement('div', 'frog-container');
+                containerEl.style.left = `${3 + i * step}%`;
+                containerEl.style.top = '35%';
+                containerEl.dataset.originalQuestionIndex = qIndex;
+
+                const frog = createElement('div', 'frog');
+                const img = new Image();
+                img.src = 'https://wdesk.ru/_ph/147/1/821529003.jpg?1752895239';
+                img.alt = 'Лягушка с ошибкой';
+                img.onerror = () => {
+                    frog.innerHTML = '<div style="font-size:40px;color:#ff5555;text-shadow:0 0 8px #ff5555">🐸⚠️</div>';
+                };
+                frog.appendChild(img);
+                containerEl.appendChild(frog);
+                gameRoot.appendChild(containerEl);
+
+                containers.push({
+                    container: containerEl,
+                    frog,
+                    velocity: { x: 0, y: 0 },
+                    clicked: false,
+                    removed: false,
+                    questionIndex: qIndex
+                });
+
+                frog.addEventListener('click', () => handleReviewClick(i, qIndex));
+            });
+
+            gameStarted = true;
+            animationStarted = false;
+            document.getElementById('end-message').style.display = 'none';
+
+            containers.forEach(frog => {
+                const left = parseFloat(frog.container.style.left) || 50;
+                const top = 35;
+                const centerX = 50, centerY = 25;
+                const dx = left - centerX, dy = top - centerY;
+                let angle = Math.atan2(dy, dx);
+                if (Math.random() < 0.2) angle = Math.random() * 2 * Math.PI;
+                else angle += (Math.random() - 0.5) * 0.8;
+                const mag = 0.35 * (0.9 + Math.random() * 0.5);
+                frog.velocity = { x: Math.cos(angle) * mag, y: Math.sin(angle) * mag };
+            });
+            animate();
+        }
+
+        function handleReviewClick(index, originalQuestionIndex) {
+            if (containers[index].clicked || containers[index].removed) return;
+            containers[index].clicked = true;
+            containers[index].velocity = { x: 0, y: 0 };
+            containers[index].frog.classList.add('growing');
+
+            try { quackSound.currentTime = 0; quackSound.play(); } catch (e) {}
+
+            setTimeout(() => {
+                containers[index].frog.classList.remove('growing');
+                containers[index].frog.classList.add('disappearing');
+                try { teleportSound.currentTime = 0; teleportSound.play(); } catch (e) {}
+
+                const questionData = questions[originalQuestionIndex];
+
+                const popup = createElement('div', 'question-popup');
+                popup.innerHTML = `
+                    <div class="question-text">${questionData.question}</div>
+                    <div class="options-container" id="options-review-${index}"></div>
+                `;
+                gameRoot.appendChild(popup);
+
+                const optionsContainer = document.getElementById(`options-review-${index}`);
+                questionData.answers.forEach((ans, i) => {
+                    const btn = createElement('button', 'option');
+                    btn.textContent = ans;
+                    btn.dataset.idx = i;
+                    btn.addEventListener('click', () => handleReviewAnswer(i, questionData.correct, btn, optionsContainer, popup, index, originalQuestionIndex));
+                    optionsContainer.appendChild(btn);
+                });
+            }, 400);
+        }
+
+        function handleReviewAnswer(selected, correct, btn, options, popup, frogIndex, questionOrigIndex) {
+            if (btn.classList.contains('correct') || btn.classList.contains('incorrect')) return;
+
+            if (selected === correct) {
+                correctScore++;
+                updateScore();
+                btn.classList.add('correct');
+                options.querySelectorAll('.option').forEach((b, i) => {
+                    if (i !== correct) b.classList.add('incorrect');
+                });
+                setTimeout(() => {
+                    if (popup.parentNode) popup.parentNode.removeChild(popup);
+                    const frog = containers[frogIndex];
+                    if (frog.container.parentNode) frog.container.parentNode.removeChild(frog.container);
+                    frog.removed = true;
+
+                    const idx = mistakes.indexOf(questionOrigIndex);
+                    if (idx > -1) mistakes.splice(idx, 1);
+
+                    if (mistakes.length === 0) {
+                        showMissionComplete();
+                    }
+                }, 1500);
+            } else {
+                btn.classList.add('incorrect');
+                try { explosionSound.currentTime = 0; explosionSound.play(); } catch (e) {}
+
+                let fb = options.querySelector('.feedback');
+                if (!fb) {
+                    fb = createElement('div', 'feedback incorrect');
+                    fb.textContent = 'Неверно!';
+                    fb.style.marginTop = '15px';
+                    fb.style.padding = '10px';
+                    fb.style.borderRadius = '8px';
+                    fb.style.fontSize = '18px';
+                    fb.style.fontWeight = 'bold';
+                    fb.style.background = 'rgba(255,85,85,0.2)';
+                    fb.style.color = '#ff5555';
+                    fb.style.border = '1px solid #ff5555';
+                    options.appendChild(fb);
+                    setTimeout(() => { if (fb.parentNode) fb.parentNode.removeChild(fb); }, 2000);
+                }
+            }
+        }
+
+        function showMissionComplete() {
+            document.getElementById('mission-complete').style.display = 'block';
+        }
+
+        document.getElementById('final-restart').addEventListener('click', () => {
+            document.getElementById('mission-complete').style.display = 'none';
+            resetGame();
+        });
+
+        document.getElementById('final-next').addEventListener('click', () => {
+            document.getElementById('mission-complete').style.display = 'none';
+            try {
+                (window.parent?.genially?.navigation || window?.genially?.navigation)?.goToNextSlide?.();
+            } catch (e) {}
+        });
+
+        startButton.addEventListener('click', startGame);
+        document.getElementById('end-button').addEventListener('click', resetGame);
+        document.getElementById('next-slide-button').addEventListener('click', () => {
+            try {
+                (window.parent?.genially?.navigation || window?.genially?.navigation)?.goToNextSlide?.();
+            } catch (e) {}
+        });
+        document.getElementById('review-button').addEventListener('click', startReviewMode);
+        createFrogs();
+    </script>
+</body>
+</html>

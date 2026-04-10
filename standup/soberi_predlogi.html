@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Собери предлоги</title>
+<style>
+  body{
+    background: radial-gradient(circle at 50% 30%, #0f3a75 0%, #0a2c5a 40%, #071f3d 75%, #04152b 100%);
+    color:#fff;
+    font-family: Arial, sans-serif;
+    line-height:1.7;
+    margin:0;
+  }
+
+  .wrap{
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 18px 26px 26px;
+  }
+
+  h1{
+    text-align:center;
+    font-size:28px;
+    margin: 10px 0 18px;
+    letter-spacing: 0.3px;
+  }
+
+  /* ✅ Красивая рамочка */
+  .frame{
+    border-radius: 18px;
+    padding: 18px 18px 14px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.18);
+    box-shadow:
+      0 0 0 2px rgba(80,170,255,0.18) inset,
+      0 0 22px rgba(0,0,0,0.35);
+    backdrop-filter: blur(6px);
+  }
+
+  .text{
+    font-size: 18px;
+  }
+
+  .text span{
+    cursor:pointer;
+    padding:2px 4px;
+    border-radius:6px;
+    transition:0.15s;
+    user-select:none;
+  }
+
+  .correct{ background:#2ecc71; color:#001; }
+  .wrong{ background:#e74c3c; }
+
+  .hud{
+    display:flex;
+    gap:14px;
+    align-items:center;
+    justify-content:space-between;
+    margin-top: 14px;
+    flex-wrap: wrap;
+  }
+
+  .score{
+    font-size: 20px;
+    opacity: 0.95;
+  }
+
+  /* =========================
+     ✅ НЕОНОВЫЕ КНОПКИ
+     ========================= */
+
+  .btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    padding: 10px 18px;
+    border-radius: 14px;
+    color:#fff;
+    cursor: pointer;
+    font-size: 16px;
+    letter-spacing:0.4px;
+    transition: 0.2s;
+    user-select:none;
+    border: 1px solid rgba(255,255,255,0.18);
+    background: rgba(255,255,255,0.08);
+    box-shadow: 0 0 10px rgba(255,255,255,0.08);
+  }
+  .btn:hover{ transform: translateY(-2px); }
+  .btn:active{ transform: translateY(0); }
+
+  /* Синяя неоновая — Все прелоги найдены. Нажми ДАЛЕЕ */
+  .btn-blue{
+    border: 1px solid rgba(80,170,255,0.65);
+    background: linear-gradient(145deg, #1f6bff, #144fc7);
+    box-shadow:
+      0 0 10px rgba(80,170,255,0.55),
+      0 0 26px rgba(50,130,255,0.35);
+  }
+  .btn-blue:hover{
+    box-shadow:
+      0 0 14px rgba(110,200,255,0.9),
+      0 0 34px rgba(70,160,255,0.7);
+  }
+
+  /* Аварийная — Начать заново */
+  .btn-danger{
+    border: 1px solid rgba(255,120,70,0.75);
+    background: linear-gradient(145deg, #ff4d2d, #c83218);
+    box-shadow:
+      0 0 10px rgba(255,110,70,0.55),
+      0 0 26px rgba(255,90,50,0.35);
+  }
+  .btn-danger:hover{
+    box-shadow:
+      0 0 14px rgba(255,150,90,0.9),
+      0 0 34px rgba(255,110,70,0.7);
+  }
+
+  /* disabled для всех кнопок */
+  .btn[disabled]{
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    box-shadow:none;
+    opacity:0.4;
+    cursor:not-allowed;
+    transform:none;
+  }
+
+  /* Оверлей "поломки" */
+  .overlay{
+    position: fixed;
+    inset: 0;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    background: rgba(0,0,0,0.72);
+    z-index: 999;
+    padding: 24px;
+  }
+  .overlay.show{ display:flex; }
+
+  .modal{
+    max-width: 720px;
+    width: 100%;
+    border-radius: 18px;
+    padding: 18px 18px 16px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.22);
+    box-shadow: 0 18px 60px rgba(0,0,0,0.6);
+    backdrop-filter: blur(8px);
+  }
+  .modal h2{
+    margin: 0 0 10px;
+    font-size: 22px;
+  }
+  .modal p{
+    margin: 0 0 12px;
+    font-size: 16px;
+    opacity:0.95;
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>Помоги Платону собрать предлоги для входа на вечеринку 🚀</h1>
+
+    <div class="frame">
+      <div class="text" id="quizText"></div>
+
+      <div class="hud">
+        <div class="score">
+          ✔ Правильно: <span id="correctCount">0</span>
+          &nbsp;&nbsp;✖ Ошибки: <span id="wrongCount">0</span> / 3
+        </div>
+
+        <!-- ✅ Появится после 9 -->
+        <button class="btn btn-blue" id="continueBtn" disabled>Всн предлоги найдены. Нажми ДАЛЕЕ ➜</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ✅ Оверлей поломки -->
+  <div class="overlay" id="overlay">
+    <div class="modal">
+      <h2>⚠️ Авария! Система допуска дала сбой</h2>
+      <p>Ты сделал(а) 3 ошибки — пропуск на вечеринку аннулирован. Перезагружаем отсек и начинаем заново…</p>
+      <button class="btn btn-danger" id="restartBtn">Начать заново</button>
+    </div>
+  </div>
+
+<script>
+  // ✅ правильные предлоги
+  const correctPhrases = [
+    "вроде",
+    "несмотря на",
+    "вследствие",
+    "насчёт",
+    "вместо",
+    "в заключение"
+  ];
+
+  const NEED_CORRECT = 9;
+  const MAX_WRONG = 3;
+
+  let correctCount = 0;
+  let wrongCount = 0;
+
+  const text = `На этот раз наш звездолет завис над туманностью вроде гигантского сахарного облака. 
+Капитан, несмотря на протесты команды, решил попробовать его на вкус, упорно не смотря на предупреждающий красный сигнал датчика токсичности. 
+Вследствие такой дегустации экипаж внезапно начал покрываться розовыми чешуйками. 
+Мы пытались разобраться в причине этого процесса, но все больше утопали в следствии. 
+Пока мы спорили насчёт того, как теперь управлять пультом, наш ИИ впал в депрессию и перевёл остатки топлива на счёт службы доставки рыбьего корма. 
+Вместо доктора нам прислали гибрид чемодана и осьминога. 
+Он рассказал, что меняется в роде его подкласса при линьке, и прописал нам что-то вроде гимнастики с кульбитом на счёт «три». 
+В заключение сеанса гибрид предложил нам контракт, но мы не были заинтересованы в заключении этого договора. 
+Теперь мы заперты в изоляторе, словно в заключении. 
+Капитан обещает, что вследствие этого урока он больше никогда не прикоснется к подозрительным облакам, несмотря на их аппетитный вид.`;
+
+  const container = document.getElementById("quizText");
+  const correctEl = document.getElementById("correctCount");
+  const wrongEl = document.getElementById("wrongCount");
+  const continueBtn = document.getElementById("continueBtn");
+
+  const overlay = document.getElementById("overlay");
+  const restartBtn = document.getElementById("restartBtn");
+
+  // ✅ составные предлоги кликаются целиком
+  const multiWordTargets = ["несмотря на", "в заключение"];
+
+  // Храним точные найденные вхождения (с регистром)
+  const stored = [];
+  let prepared = text;
+
+  multiWordTargets.forEach(phrase => {
+    const parts = phrase.split(" ");
+    const re = new RegExp(parts.join("\\s+"), "gi");
+    prepared = prepared.replace(re, (match) => {
+      const id = stored.length;
+      stored.push(match);
+      return `@@PH${id}@@`;
+    });
+  });
+
+  const tokens = prepared.split(/(\s+)/);
+
+  function normalize(str){
+    return str
+      .toLowerCase()
+      .replace(/[.,!?;:()"«»“”„]/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function updateUI(){
+    correctEl.textContent = correctCount;
+    wrongEl.textContent = wrongCount;
+
+    if (correctCount >= NEED_CORRECT && wrongCount < MAX_WRONG) {
+      continueBtn.disabled = false;
+    } else {
+      continueBtn.disabled = true;
+    }
+  }
+
+  function showCrash(){
+    overlay.classList.add("show");
+  }
+
+  function clearMarks(){
+    container.querySelectorAll("span.correct, span.wrong").forEach(s=>{
+      s.classList.remove("correct","wrong");
+    });
+  }
+
+  function restart(){
+    overlay.classList.remove("show");
+    correctCount = 0;
+    wrongCount = 0;
+    clearMarks();
+    updateUI();
+  }
+
+  function handleClick(span, rawText){
+    if (span.classList.contains("correct") || span.classList.contains("wrong")) return;
+
+    const clean = normalize(rawText);
+
+    if (correctPhrases.includes(clean)) {
+      span.classList.add("correct");
+      correctCount++;
+      updateUI();
+    } else {
+      span.classList.add("wrong");
+      wrongCount++;
+      updateUI();
+
+      if (wrongCount >= MAX_WRONG) {
+        showCrash();
+      }
+    }
+  }
+
+  // Рендерим текст
+  tokens.forEach(t => {
+    if (/^\s+$/.test(t)) {
+      container.appendChild(document.createTextNode(t));
+      return;
+    }
+
+    const m = t.match(/^@@PH(\d+)@@$/);
+    if (m) {
+      const idx = Number(m[1]);
+      const phraseText = stored[idx];
+      const span = document.createElement("span");
+      span.textContent = phraseText;
+      span.addEventListener("click", () => handleClick(span, phraseText));
+      container.appendChild(span);
+      return;
+    }
+
+    const span = document.createElement("span");
+    span.textContent = t;
+    span.addEventListener("click", () => handleClick(span, t));
+    container.appendChild(span);
+  });
+
+  // Кнопки
+  restartBtn.addEventListener("click", restart);
+
+  continueBtn.addEventListener("click", () => {
+    // ✅ сюда вставишь переход в квест
+    // пример: window.location.href = "next.html";
+    alert("Переход на следующий эпизод (сюда вставим ссылку).");
+  });
+
+  updateUI();
+</script>
+</body>
+</html>

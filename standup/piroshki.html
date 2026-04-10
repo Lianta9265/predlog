@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Пирожки для Платона — 15 пирожков</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: #020611;
+    }
+
+    #game {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: #020611;
+    }
+
+    #bg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      user-select: none;
+      pointer-events: none;
+    }
+
+    #overlayGlow {
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(circle at center, rgba(255,255,255,0.03), rgba(0,0,0,0.15) 60%, rgba(0,0,0,0.28));
+      pointer-events: none;
+    }
+
+    .pirog {
+      position: absolute;
+      width: 88px;
+      height: auto;
+      cursor: pointer;
+      user-select: none;
+      z-index: 5;
+      transition:
+        left 1.8s ease-in-out,
+        top 1.8s ease-in-out,
+        transform 1.2s ease-in-out,
+        opacity 0.8s ease;
+      filter:
+        drop-shadow(0 6px 10px rgba(0,0,0,0.35))
+        drop-shadow(0 0 8px rgba(255,180,80,0.18));
+      will-change: left, top, transform, opacity;
+    }
+
+    .pirog:hover {
+      transform: scale(1.08) rotate(4deg);
+      filter:
+        drop-shadow(0 8px 14px rgba(0,0,0,0.4))
+        drop-shadow(0 0 12px rgba(255,200,120,0.28));
+    }
+
+    .pirog.caught {
+      cursor: default;
+      z-index: 9;
+    }
+
+    .pirog.escape {
+      transition:
+        left 1.6s ease-in,
+        top 1.6s ease-in,
+        transform 1.6s ease-in,
+        opacity 1.4s ease-in;
+    }
+
+    #hud {
+      position: absolute;
+      top: 16px;
+      left: 16px;
+      right: 16px;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .hud-box {
+      padding: 10px 16px;
+      border-radius: 16px;
+      color: #fff;
+      background: rgba(12, 18, 42, 0.72);
+      border: 1px solid rgba(140, 210, 255, 0.25);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+      backdrop-filter: blur(8px);
+      font-size: 18px;
+      line-height: 1.2;
+    }
+
+    #topTitle {
+      position: absolute;
+      left: 65%;
+      top: 16px;
+      transform: translateX(-50%);
+      z-index: 21;
+      min-width: 320px;
+      max-width: 60vw;
+      text-align: center;
+      padding: 10px 18px;
+      border-radius: 18px;
+      color: #fff;
+      background: rgba(20, 27, 58, 0.8);
+      border: 1px solid rgba(180, 230, 255, 0.25);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.28);
+      backdrop-filter: blur(8px);
+      font-size: 22px;
+      font-weight: 700;
+      pointer-events: none;
+    }
+
+    #message {
+      position: absolute;
+      left: 50%;
+      top: 72px;
+      transform: translateX(-50%);
+      z-index: 25;
+      min-width: 320px;
+      max-width: 80vw;
+      text-align: center;
+      padding: 12px 18px;
+      border-radius: 18px;
+      color: #fff;
+      background: rgba(20, 27, 58, 0.8);
+      border: 1px solid rgba(180, 230, 255, 0.25);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.28);
+      backdrop-filter: blur(8px);
+      font-size: 22px;
+      font-weight: 700;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.35s ease;
+    }
+
+    #message.show { opacity: 1; }
+
+    #questionBox {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: min(760px, 92vw);
+      z-index: 50;
+      display: none;
+      background:
+        linear-gradient(180deg, rgba(15,22,58,0.96), rgba(8,12,32,0.96));
+      border: 2px solid rgba(126, 222, 255, 0.35);
+      border-radius: 26px;
+      padding: 24px 24px 20px;
+      box-shadow:
+        0 18px 60px rgba(0,0,0,0.5),
+        0 0 30px rgba(99, 214, 255, 0.08);
+      color: #fff;
+      backdrop-filter: blur(10px);
+    }
+
+    #questionText {
+      font-size: 26px;
+      line-height: 1.45;
+      text-align: center;
+      margin-bottom: 20px;
+      white-space: normal;
+    }
+
+    #answers {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .answerBtn {
+      border: none;
+      border-radius: 18px;
+      padding: 16px 18px;
+      font-size: 24px;
+      font-weight: 700;
+      cursor: pointer;
+      color: #fff;
+      background: linear-gradient(180deg, rgba(54,97,178,0.95), rgba(36,67,130,0.95));
+      border: 1px solid rgba(170,220,255,0.28);
+      box-shadow:
+        0 8px 24px rgba(0,0,0,0.28),
+        inset 0 0 18px rgba(255,255,255,0.06);
+      transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+    }
+
+    .answerBtn:hover {
+      transform: translateY(-2px) scale(1.01);
+      box-shadow:
+        0 12px 26px rgba(0,0,0,0.35),
+        0 0 16px rgba(120,220,255,0.12);
+      background: linear-gradient(180deg, rgba(64,112,202,0.98), rgba(40,74,145,0.98));
+    }
+
+    .answerBtn:active { transform: scale(0.985); }
+
+    #questionHint {
+      margin-top: 14px;
+      text-align: center;
+      color: #cbe9ff;
+      opacity: 0.85;
+      font-size: 17px;
+    }
+
+    #finalScreen {
+      position: absolute;
+      inset: 0;
+      z-index: 70;
+      display: none;
+      background: rgba(3, 8, 24, 0.58);
+      backdrop-filter: blur(4px);
+      overflow: auto;
+      padding: 20px 0;
+    }
+
+    #finalCard {
+      position: relative;
+      margin: 20px auto;
+      width: min(860px, 92vw);
+      border-radius: 30px;
+      padding: 28px 26px;
+      text-align: center;
+      color: #fff;
+      background:
+        linear-gradient(180deg, rgba(18,28,74,0.95), rgba(8,14,38,0.95));
+      border: 2px solid rgba(127, 226, 255, 0.34);
+      box-shadow:
+        0 20px 70px rgba(0,0,0,0.5),
+        0 0 34px rgba(104, 219, 255, 0.08);
+    }
+
+    #finalTitle {
+      font-size: 40px;
+      font-weight: 900;
+      margin-bottom: 10px;
+      color: #fff6bf;
+      text-shadow: 0 0 18px rgba(255, 223, 110, 0.18);
+    }
+
+    #finalText {
+      font-size: 24px;
+      line-height: 1.5;
+      margin-bottom: 18px;
+    }
+
+    #mistakesBox {
+      display: none;
+      margin: 20px auto 24px;
+      text-align: left;
+      width: min(760px, 100%);
+      padding: 18px 18px 8px;
+      border-radius: 22px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,170,170,0.18);
+      box-shadow: inset 0 0 20px rgba(255,255,255,0.02);
+    }
+
+    #mistakesTitle {
+      text-align: center;
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffd7d7;
+      margin-bottom: 16px;
+    }
+
+    .mistake-item {
+      margin-bottom: 14px;
+      padding: 14px 16px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+      line-height: 1.5;
+      font-size: 20px;
+    }
+
+    .mistake-q {
+      color: #eaf7ff;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .mistake-user {
+      color: #ffbaba;
+      margin-bottom: 4px;
+    }
+
+    .mistake-correct {
+      color: #bff8c9;
+      font-weight: 700;
+    }
+
+    .final-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+    }
+
+    .finalBtn {
+      border: none;
+      border-radius: 18px;
+      padding: 16px 26px;
+      font-size: 22px;
+      font-weight: 800;
+      cursor: pointer;
+      color: #fff;
+      box-shadow: 0 10px 28px rgba(0,0,0,0.3);
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .finalBtn:hover {
+      transform: translateY(-2px) scale(1.02);
+      box-shadow: 0 14px 34px rgba(0,0,0,0.38);
+    }
+
+    #reviewBtn {
+      background: linear-gradient(180deg, #ff9a60, #d86a1e);
+      display: none;
+    }
+
+    #restartBtn {
+      background: linear-gradient(180deg, #35b6ff, #1272d9);
+    }
+
+    #nextBtn {
+      background: linear-gradient(180deg, #47d78a, #1f9c5f);
+      display: none;
+    }
+
+    #coffeeWrap {
+      position: absolute;
+      left: 42.8%;
+      top: 67%;
+      width: 180px;
+      height: 180px;
+      transform: translate(-50%, -50%) scale(0.2);
+      z-index: 11;
+      opacity: 0;
+      transition: opacity 0.8s ease, transform 0.8s ease;
+      pointer-events: none;
+    }
+
+    #coffeeWrap.show {
+      opacity: 1;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    #coffee {
+      position: absolute;
+      left: 50%;
+      top: 58%;
+      transform: translate(-50%, -50%);
+      width: 165px;
+      height: auto;
+      filter: drop-shadow(0 10px 14px rgba(0,0,0,0.22));
+    }
+
+    .steam {
+      position: absolute;
+      width: 16px;
+      height: 42px;
+      border-radius: 50%;
+      background: linear-gradient(to top, rgba(255,255,255,0.0), rgba(255,255,255,0.72));
+      filter: blur(2px);
+      opacity: 0;
+      animation: steamUp 2.2s ease-out forwards;
+    }
+
+    @keyframes steamUp {
+      0%   { transform: translateY(0) scale(0.8); opacity: 0; }
+      20%  { opacity: 0.65; }
+      100% { transform: translateY(-60px) scale(1.5); opacity: 0; }
+    }
+
+    .spark {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,240,160,1) 0%, rgba(255,190,60,0.8) 45%, rgba(255,150,20,0) 75%);
+      pointer-events: none;
+      z-index: 60;
+      opacity: 1;
+      animation: sparkFly 0.9s ease-out forwards;
+    }
+
+    @keyframes sparkFly {
+      0%   { transform: translate(0,0) scale(0.8); opacity: 1; }
+      100% { transform: translate(var(--dx), var(--dy)) scale(1.6); opacity: 0; }
+    }
+
+    .toast {
+      position: absolute;
+      z-index: 60;
+      color: #fff;
+      font-size: 34px;
+      font-weight: 900;
+      text-shadow: 0 4px 12px rgba(0,0,0,0.4);
+      pointer-events: none;
+      animation: toastRise 1s ease-out forwards;
+    }
+
+    @keyframes toastRise {
+      0%   { transform: translate(-50%, 0) scale(0.9); opacity: 0; }
+      10%  { opacity: 1; }
+      100% { transform: translate(-50%, -45px) scale(1.08); opacity: 0; }
+    }
+
+    @media (max-width: 900px) {
+      .pirog { width: 72px; }
+      #questionText { font-size: 22px; }
+      .answerBtn { font-size: 20px; }
+      #answers { grid-template-columns: 1fr; }
+      #finalTitle { font-size: 32px; }
+      #finalText { font-size: 20px; }
+      #message { font-size: 18px; top: 68px; }
+      #topTitle { font-size: 18px; max-width: 74vw; }
+      .finalBtn { font-size: 20px; }
+      .mistake-item { font-size: 18px; }
+
+      #coffeeWrap {
+        left: 43%;
+        top: 67%;
+        width: 150px;
+        height: 150px;
+      }
+
+      #coffee {
+        width: 138px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="game">
+    <img id="bg" src="912d8fda_img_2K.png" alt="Фон" />
+    <div id="overlayGlow"></div>
+
+    <div id="hud">
+      <div class="hud-box" id="scoreBox">Платон получил: 0 / 15</div>
+      <div class="hud-box" id="errorBox">Улетело пирожков: 0</div>
+    </div>
+
+    <div id="topTitle">Космический пирожковый экзамен</div>
+    <div id="message">Поймай пирожок и ответь правильно ✨</div>
+
+    <div id="coffeeWrap">
+      <img id="coffee" src="cap.png" alt="Кофе">
+    </div>
+
+    <div id="questionBox">
+      <div id="questionText"></div>
+      <div id="answers"></div>
+      <div id="questionHint">Нажми на правильный вариант</div>
+    </div>
+
+    <div id="finalScreen">
+      <div id="finalCard">
+        <div id="finalTitle">☕👏 БРАВО! 👏☕</div>
+        <div id="finalText"></div>
+
+        <div id="mistakesBox">
+          <div id="mistakesTitle">Изучить ошибки</div>
+          <div id="mistakesList"></div>
+        </div>
+
+        <div class="final-buttons">
+          <button class="finalBtn" id="reviewBtn">ИЗУЧИТЬ ОШИБКИ</button>
+          <button class="finalBtn" id="restartBtn">СТАРТ</button>
+          <button class="finalBtn" id="nextBtn">ДАЛЬШЕ</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const TOTAL_PIROGS = 15;
+    const PIROG_SRC = "пирожок.png";
+    const APPLAUSE_SRC = "applause.mp3";
+
+    // Сюда потом впиши имя следующего файла
+    // Например: const NEXT_PAGE_URL = "video2.html";
+    const NEXT_PAGE_URL = "";
+
+    const questions = [
+      { q: "___ за уходящим летом наступила прохладная и дождливая осень.", a: ["вслед", "в след"], correct: 0 },
+      { q: "Охотник всматривался ___, оставленный на мокром песке каким-то крупным зверем.", a: ["вслед", "в след"], correct: 1 },
+      { q: "Нужно было наступать точно ___, чтобы не завязнуть в глубоком снегу.", a: ["вслед", "в след"], correct: 1 },
+      { q: "Мы долго смотрели ___ уплывающему пароходу, пока он не превратился в маленькую точку.", a: ["вслед", "в след"], correct: 0 },
+
+      { q: "___ запланированной поездки за город нам пришлось готовиться к экзаменам.", a: ["вместо", "в место"], correct: 0 },
+      { q: "В этот раз ___ привычного предисловия автор решил сразу перейти к основным событиям.", a: ["вместо", "в место"], correct: 0 },
+      { q: "Путники наконец прибыли ___ назначения.", a: ["вместо", "в место"], correct: 1 },
+      { q: "Мы решили вернуться ___, где когда-то впервые встретились.", a: ["вместо", "в место"], correct: 1 },
+
+      { q: "Вода стекала прямо ___ от ботинка, превращая его в крошечное озеро.", a: ["вслед", "в след"], correct: 1 },
+
+      { q: "___ того чтобы тратить время на пустые споры, мы решили искать артефакты.", a: ["вместо", "в место"], correct: 0 },
+      { q: "Нам предложили использовать этот термин ___ устаревшего.", a: ["вместо", "в место"], correct: 0 },
+
+      { q: "Геологическая группа должна была прибыть ___ дислокации лагеря до захода солнца.", a: ["вместо", "в место"], correct: 1 },
+
+      { q: "___ за резким похолоданием начались заморозки, и лужи на дорогах покрылись тонкой коркой льда.", a: ["вслед", "в след"], correct: 0 },
+
+      { q: "Туристы стремились попасть ___ заповедное, скрытое от посторонних глаз.", a: ["вместо", "в место"], correct: 1 },
+
+      { q: "Незнакомец быстро скрылся за поворотом, а мы еще несколько минут глядели ему ___.", a: ["вслед", "в след"], correct: 0 }
+    ];
+
+    const game = document.getElementById("game");
+    const questionBox = document.getElementById("questionBox");
+    const questionText = document.getElementById("questionText");
+    const answersDiv = document.getElementById("answers");
+    const scoreBox = document.getElementById("scoreBox");
+    const errorBox = document.getElementById("errorBox");
+    const finalScreen = document.getElementById("finalScreen");
+    const finalTitle = document.getElementById("finalTitle");
+    const finalText = document.getElementById("finalText");
+    const mistakesBox = document.getElementById("mistakesBox");
+    const mistakesList = document.getElementById("mistakesList");
+    const reviewBtn = document.getElementById("reviewBtn");
+    const restartBtn = document.getElementById("restartBtn");
+    const nextBtn = document.getElementById("nextBtn");
+    const coffeeWrap = document.getElementById("coffeeWrap");
+    const message = document.getElementById("message");
+
+    let pirogs = [];
+    let currentPirog = null;
+    let currentQuestionIndex = 0;
+    let score = 0;
+    let errors = 0;
+    let gameLocked = false;
+    let wrongAnswers = [];
+
+    let audioCtx = null;
+    let applauseAudio = null;
+    let steamTimer = null;
+
+    function ensureAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === "suspended") {
+        audioCtx.resume();
+      }
+    }
+
+    function ensureApplauseAudio() {
+      if (!applauseAudio) {
+        applauseAudio = new Audio(APPLAUSE_SRC);
+        applauseAudio.preload = "auto";
+      }
+    }
+
+    function beep(freq = 440, duration = 0.15, type = "sine", volume = 0.04, when = 0) {
+      if (!audioCtx) return;
+
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime + when);
+
+      gain.gain.setValueAtTime(0.0001, audioCtx.currentTime + when);
+      gain.gain.exponentialRampToValueAtTime(volume, audioCtx.currentTime + when + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + when + duration);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      osc.start(audioCtx.currentTime + when);
+      osc.stop(audioCtx.currentTime + when + duration + 0.02);
+    }
+
+    function playCorrectSound() {
+      ensureAudio();
+      beep(660, 0.12, "triangle", 0.05, 0);
+      beep(880, 0.14, "triangle", 0.05, 0.12);
+      beep(1175, 0.18, "triangle", 0.05, 0.24);
+    }
+
+    function playWrongSound() {
+      ensureAudio();
+      beep(280, 0.16, "sawtooth", 0.045, 0);
+      beep(220, 0.24, "sawtooth", 0.04, 0.12);
+    }
+
+    function playCatchSound() {
+      ensureAudio();
+      beep(740, 0.08, "sine", 0.03, 0);
+      beep(920, 0.08, "sine", 0.03, 0.07);
+    }
+
+    function playApplauseSound() {
+      ensureAudio();
+      ensureApplauseAudio();
+
+      try {
+        applauseAudio.currentTime = 0;
+        applauseAudio.play();
+      } catch (e) {}
+
+      for (let i = 0; i < 20; i++) {
+        const t = i * 0.06;
+        beep(180 + Math.random() * 180, 0.05, "square", 0.012 + Math.random() * 0.01, t);
+        beep(250 + Math.random() * 280, 0.05, "triangle", 0.009 + Math.random() * 0.008, t + 0.015);
+      }
+    }
+
+    function stopApplause() {
+      if (applauseAudio) {
+        applauseAudio.pause();
+        applauseAudio.currentTime = 0;
+      }
+    }
+
+    function stopSteam() {
+      if (steamTimer) {
+        clearInterval(steamTimer);
+        steamTimer = null;
+      }
+      document.querySelectorAll(".steam").forEach(el => el.remove());
+    }
+
+    function startSteam() {
+      stopSteam();
+      createSteam();
+      steamTimer = setInterval(createSteam, 700);
+    }
+
+    function createSteam() {
+      if (!coffeeWrap.classList.contains("show")) return;
+
+      for (let i = 0; i < 4; i++) {
+        const s = document.createElement("div");
+        s.className = "steam";
+        s.style.left = `${68 + Math.random() * 36}px`;
+        s.style.top = `${2 + Math.random() * 10}px`;
+        s.style.animationDelay = `${Math.random() * 0.35}s`;
+        coffeeWrap.appendChild(s);
+        setTimeout(() => s.remove(), 2200);
+      }
+    }
+
+    function showMessage(text, timeout = 1600) {
+      message.textContent = text;
+      message.classList.add("show");
+      clearTimeout(showMessage._t);
+      showMessage._t = setTimeout(() => {
+        message.classList.remove("show");
+      }, timeout);
+    }
+
+    function updateHUD() {
+      scoreBox.textContent = `Платон получил: ${score} / ${TOTAL_PIROGS}`;
+      errorBox.textContent = `Улетело пирожков: ${errors}`;
+    }
+
+    function random(min, max) {
+      return Math.random() * (max - min) + min;
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function shuffleArray(array) {
+      const arr = [...array];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function getPlateSlots() {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+
+      const cx = w * 0.555;
+      const cy = h * 0.595;
+
+      return [
+        { x: cx - 112, y: cy + 24, r: -12 },
+        { x: cx - 56,  y: cy + 16, r: 8 },
+        { x: cx + 2,   y: cy + 14, r: -10 },
+        { x: cx + 58,  y: cy + 12, r: 9 },
+        { x: cx - 85,  y: cy - 4,  r: 7 },
+        { x: cx - 26,  y: cy - 8,  r: -8 },
+        { x: cx + 33,  y: cy - 10, r: 10 },
+        { x: cx - 56,  y: cy - 30, r: -6 },
+        { x: cx + 2,   y: cy - 34, r: 6 },
+        { x: cx + 61,  y: cy - 36, r: -10 },
+        { x: cx - 114, y: cy - 20, r: -8 },
+        { x: cx - 101, y: cy + 46, r: 8 },
+        { x: cx - 40,  y: cy + 42, r: -9 },
+        { x: cx + 20,  y: cy + 38, r: 6 },
+        { x: cx - 138, y: cy + 8,  r: -11 }
+      ];
+    }
+
+    function createSparkBurst(x, y, count = 12) {
+      for (let i = 0; i < count; i++) {
+        const s = document.createElement("div");
+        s.className = "spark";
+        s.style.left = `${x}px`;
+        s.style.top = `${y}px`;
+        s.style.setProperty("--dx", `${random(-55, 55)}px`);
+        s.style.setProperty("--dy", `${random(-55, 55)}px`);
+        game.appendChild(s);
+        setTimeout(() => s.remove(), 950);
+      }
+    }
+
+    function showToast(text, x, y) {
+      const t = document.createElement("div");
+      t.className = "toast";
+      t.textContent = text;
+      t.style.left = `${x}px`;
+      t.style.top = `${y}px`;
+      game.appendChild(t);
+      setTimeout(() => t.remove(), 1000);
+    }
+
+    function createPirog(index) {
+      const p = document.createElement("img");
+      p.src = PIROG_SRC;
+      p.className = "pirog";
+      p.dataset.index = index;
+      p.dataset.state = "free";
+
+      const startX = random(40, window.innerWidth - 140);
+      const startY = random(40, window.innerHeight - 180);
+      const angle = random(-18, 18);
+
+      p.style.left = `${startX}px`;
+      p.style.top = `${startY}px`;
+      p.style.transform = `rotate(${angle}deg)`;
+
+      game.appendChild(p);
+
+      const obj = {
+        el: p,
+        driftTimer: null
+      };
+
+      p.addEventListener("click", () => {
+        if (gameLocked) return;
+        if (p.dataset.state !== "free") return;
+        ensureAudio();
+        ensureApplauseAudio();
+        playCatchSound();
+        askQuestion(obj);
+      });
+
+      startDrift(obj);
+      pirogs.push(obj);
+    }
+
+    function startDrift(obj) {
+      movePirogRandomly(obj);
+
+      obj.driftTimer = setInterval(() => {
+        if (obj.el.dataset.state !== "free") return;
+        movePirogRandomly(obj);
+      }, 2400 + Math.random() * 1000);
+    }
+
+    function movePirogRandomly(obj) {
+      const p = obj.el;
+      const maxX = window.innerWidth - 110;
+      const maxY = window.innerHeight - 120;
+
+      let x = random(20, maxX);
+      let y = random(20, maxY);
+
+      const avoidX = window.innerWidth * 0.56;
+      const avoidY = window.innerHeight * 0.60;
+      const dx = x - avoidX;
+      const dy = y - avoidY;
+
+      if (Math.sqrt(dx * dx + dy * dy) < 180) {
+        x += dx > 0 ? 130 : -130;
+        y += dy > 0 ? 80 : -80;
+        x = clamp(x, 20, maxX);
+        y = clamp(y, 20, maxY);
+      }
+
+      const rot = random(-22, 22);
+      p.style.left = `${x}px`;
+      p.style.top = `${y}px`;
+      p.style.transform = `rotate(${rot}deg)`;
+    }
+
+    function askQuestion(obj) {
+      if (currentQuestionIndex >= questions.length) return;
+
+      gameLocked = true;
+      currentPirog = obj;
+
+      const q = questions[currentQuestionIndex];
+      questionText.textContent = q.q;
+      answersDiv.innerHTML = "";
+
+      let answers = q.a.map((text, i) => ({
+        text,
+        correct: i === q.correct
+      }));
+
+      answers = shuffleArray(answers);
+
+      answers.forEach(answer => {
+        const btn = document.createElement("button");
+        btn.className = "answerBtn";
+        btn.textContent = answer.text;
+
+        btn.addEventListener("click", () => {
+          if (answer.correct) {
+            handleCorrect();
+          } else {
+            handleWrong(answer.text);
+          }
+        });
+
+        answersDiv.appendChild(btn);
+      });
+
+      questionBox.style.display = "block";
+    }
+
+    function closeQuestionBox() {
+      questionBox.style.display = "none";
+      answersDiv.innerHTML = "";
+      currentPirog = null;
+      gameLocked = false;
+    }
+
+    function handleCorrect() {
+      if (!currentPirog) return;
+
+      playCorrectSound();
+
+      const p = currentPirog.el;
+      p.dataset.state = "caught";
+      p.classList.add("caught");
+
+      if (currentPirog.driftTimer) {
+        clearInterval(currentPirog.driftTimer);
+        currentPirog.driftTimer = null;
+      }
+
+      const slots = getPlateSlots();
+      const slot = slots[score];
+
+      p.style.left = `${slot.x}px`;
+      p.style.top = `${slot.y}px`;
+      p.style.transform = `rotate(${slot.r}deg) scale(0.94)`;
+
+      const rect = p.getBoundingClientRect();
+      createSparkBurst(rect.left + rect.width / 2, rect.top + rect.height / 2, 10);
+      showToast("Верно! 🥐", rect.left + rect.width / 2, rect.top + rect.height / 2 - 10);
+
+      score++;
+      currentQuestionIndex++;
+      updateHUD();
+      closeQuestionBox();
+
+      if (score < TOTAL_PIROGS) {
+        showMessage("Отлично! Ещё один пирожок для Платона ✨");
+      }
+
+      if (score >= TOTAL_PIROGS || currentQuestionIndex >= questions.length) {
+        finishGame();
+      }
+    }
+
+    function handleWrong(chosenText) {
+      if (!currentPirog) return;
+
+      playWrongSound();
+
+      const q = questions[currentQuestionIndex];
+      wrongAnswers.push({
+        question: q.q,
+        chosen: chosenText,
+        correct: q.a[q.correct]
+      });
+
+      const p = currentPirog.el;
+      p.dataset.state = "escaping";
+      p.classList.add("escape");
+
+      if (currentPirog.driftTimer) {
+        clearInterval(currentPirog.driftTimer);
+        currentPirog.driftTimer = null;
+      }
+
+      const rect = p.getBoundingClientRect();
+      showToast("Ой! Улетел! 💨", rect.left + rect.width / 2, rect.top + rect.height / 2);
+      createSparkBurst(rect.left + rect.width / 2, rect.top + rect.height / 2, 7);
+
+      const targetX = window.innerWidth + 160;
+      const targetY = random(20, window.innerHeight * 0.35);
+      const rot = random(40, 120);
+
+      p.style.left = `${targetX}px`;
+      p.style.top = `${targetY}px`;
+      p.style.transform = `rotate(${rot}deg) scale(0.5)`;
+      p.style.opacity = "0";
+
+      errors++;
+      currentQuestionIndex++;
+      updateHUD();
+      closeQuestionBox();
+
+      setTimeout(() => {
+        p.remove();
+      }, 1550);
+
+      if (currentQuestionIndex >= questions.length) {
+        finishGame();
+      } else {
+        showMessage("Эх! Этот пирожок улетел в космос...");
+      }
+    }
+
+    function renderMistakes() {
+      mistakesList.innerHTML = "";
+
+      if (wrongAnswers.length === 0) {
+        mistakesBox.style.display = "none";
+        reviewBtn.style.display = "none";
+        return;
+      }
+
+      reviewBtn.style.display = "inline-block";
+
+      wrongAnswers.forEach(item => {
+        const div = document.createElement("div");
+        div.className = "mistake-item";
+        div.innerHTML = `
+          <div class="mistake-q">${item.question}</div>
+          <div class="mistake-user">Ответ ученика: ${item.chosen}</div>
+          <div class="mistake-correct">Правильный ответ: ${item.correct}</div>
+        `;
+        mistakesList.appendChild(div);
+      });
+
+      mistakesBox.style.display = "none";
+      reviewBtn.textContent = "ИЗУЧИТЬ ОШИБКИ";
+    }
+
+    function finishGame() {
+      gameLocked = true;
+
+      coffeeWrap.classList.add("show");
+      startSteam();
+      playApplauseSound();
+
+      createSparkBurst(window.innerWidth * 0.55, window.innerHeight * 0.60, 26);
+      setTimeout(() => {
+        createSparkBurst(window.innerWidth * 0.58, window.innerHeight * 0.57, 20);
+      }, 250);
+
+      if (score === TOTAL_PIROGS) {
+        finalTitle.textContent = "☕👏 БРАВО! 👏☕";
+        finalText.innerHTML = `
+          Платон наконец-то позавтракал и получил кофе!<br>
+          <b>Получил пирожков:</b> ${score} из ${TOTAL_PIROGS}<br>
+          <b>Улетело в космос:</b> ${errors}<br>
+          Публика в восторге!
+        `;
+      } else {
+        finalTitle.textContent = "☕✨ Почти завтрак! ✨☕";
+        finalText.innerHTML = `
+          Платон всё же не остался голодным.<br>
+          <b>Получил пирожков:</b> ${score} из ${TOTAL_PIROGS}<br>
+          <b>Улетело в космос:</b> ${errors}
+        `;
+      }
+
+      renderMistakes();
+
+      if (NEXT_PAGE_URL && NEXT_PAGE_URL.trim() !== "") {
+        nextBtn.style.display = "inline-block";
+      } else {
+        nextBtn.style.display = "none";
+      }
+
+      setTimeout(() => {
+        finalScreen.style.display = "block";
+      }, 1100);
+    }
+
+    function resetGame() {
+      stopApplause();
+      stopSteam();
+
+      pirogs.forEach(obj => {
+        if (obj.driftTimer) clearInterval(obj.driftTimer);
+        obj.el.remove();
+      });
+
+      pirogs = [];
+      currentPirog = null;
+      currentQuestionIndex = 0;
+      score = 0;
+      errors = 0;
+      gameLocked = false;
+      wrongAnswers = [];
+
+      questionBox.style.display = "none";
+      finalScreen.style.display = "none";
+      coffeeWrap.classList.remove("show");
+      mistakesBox.style.display = "none";
+      mistakesList.innerHTML = "";
+      reviewBtn.style.display = "none";
+      nextBtn.style.display = "none";
+
+      updateHUD();
+
+      for (let i = 0; i < TOTAL_PIROGS; i++) {
+        createPirog(i);
+      }
+
+      showMessage("Поймай пирожок и накорми Платона! 🥐");
+    }
+
+    reviewBtn.addEventListener("click", () => {
+      if (mistakesBox.style.display === "block") {
+        mistakesBox.style.display = "none";
+        reviewBtn.textContent = "ИЗУЧИТЬ ОШИБКИ";
+      } else {
+        mistakesBox.style.display = "block";
+        reviewBtn.textContent = "СКРЫТЬ ОШИБКИ";
+      }
+    });
+
+    restartBtn.addEventListener("click", resetGame);
+
+    nextBtn.addEventListener("click", () => {
+      if (NEXT_PAGE_URL && NEXT_PAGE_URL.trim() !== "") {
+        window.location.href = NEXT_PAGE_URL;
+      }
+    });
+
+    window.addEventListener("resize", () => {
+      const slots = getPlateSlots();
+      let caughtIndex = 0;
+
+      pirogs.forEach(obj => {
+        const p = obj.el;
+        if (p.dataset.state === "caught") {
+          const slot = slots[caughtIndex];
+          if (slot) {
+            p.style.left = `${slot.x}px`;
+            p.style.top = `${slot.y}px`;
+            p.style.transform = `rotate(${slot.r}deg) scale(0.94)`;
+            caughtIndex++;
+          }
+        }
+      });
+    });
+
+    updateHUD();
+    resetGame();
+  </script>
+</body>
+</html>
