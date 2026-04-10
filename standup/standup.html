@@ -1,0 +1,686 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stand-Up — Предлоги</title>
+
+<style>
+  :root{
+    --bg1:#040714;
+    --bg2:#09122b;
+    --bg3:#10214f;
+    --panel:rgba(9,16,42,.88);
+    --text:#f7fbff;
+    --muted:#c4d5ff;
+    --cyan:#53f6ff;
+    --blue:#6ea8ff;
+    --violet:#b06cff;
+    --pink:#ff5fd2;
+    --gold:#ffd76a;
+    --lime:#90ff7d;
+    --mint:#7fffe0;
+  }
+
+  *{ box-sizing:border-box; }
+
+  html,body{
+    margin:0;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    font-family:"Segoe UI", Arial, sans-serif;
+    color:var(--text);
+    background:
+      radial-gradient(1200px 700px at 12% 8%, rgba(83,246,255,.15), transparent 58%),
+      radial-gradient(1000px 620px at 88% 12%, rgba(176,108,255,.18), transparent 60%),
+      radial-gradient(900px 650px at 50% 100%, rgba(255,95,210,.10), transparent 62%),
+      linear-gradient(180deg, var(--bg3), var(--bg2) 42%, var(--bg1) 100%);
+  }
+
+  body::before,
+  body::after{
+    content:"";
+    position:fixed;
+    inset:0;
+    pointer-events:none;
+  }
+
+  body::before{
+    background-image:
+      radial-gradient(2px 2px at 8% 22%, rgba(255,255,255,.85), transparent 60%),
+      radial-gradient(1.5px 1.5px at 17% 74%, rgba(255,255,255,.65), transparent 60%),
+      radial-gradient(1.8px 1.8px at 31% 17%, rgba(255,255,255,.65), transparent 60%),
+      radial-gradient(2px 2px at 44% 62%, rgba(255,255,255,.8), transparent 60%),
+      radial-gradient(1.8px 1.8px at 58% 24%, rgba(255,255,255,.75), transparent 60%),
+      radial-gradient(1.5px 1.5px at 67% 82%, rgba(255,255,255,.65), transparent 60%),
+      radial-gradient(2px 2px at 83% 39%, rgba(255,255,255,.8), transparent 60%),
+      radial-gradient(1.7px 1.7px at 92% 69%, rgba(255,255,255,.7), transparent 60%);
+      opacity:.8;
+      animation: starsTwinkle 4.8s ease-in-out infinite alternate;
+  }
+
+  body::after{
+    background:
+      radial-gradient(600px 200px at 20% 110%, rgba(83,246,255,.08), transparent 70%),
+      radial-gradient(700px 240px at 80% -10%, rgba(176,108,255,.10), transparent 70%);
+    filter: blur(16px);
+    opacity:.95;
+  }
+
+  @keyframes starsTwinkle{
+    from{ opacity:.55; }
+    to{ opacity:.95; }
+  }
+
+  .app{
+    position:relative;
+    width:100%;
+    height:100%;
+    display:grid;
+    grid-template-columns: 1fr 220px;
+    gap:12px;
+    padding:12px;
+  }
+
+  .stage{
+    position:relative;
+    min-width:0;
+    min-height:0;
+    overflow:hidden;
+    border-radius:26px;
+    border:1px solid rgba(255,255,255,.12);
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02)),
+      radial-gradient(900px 500px at 15% 10%, rgba(83,246,255,.08), transparent 60%),
+      radial-gradient(900px 520px at 88% 20%, rgba(176,108,255,.10), transparent 60%),
+      rgba(7,12,32,.92);
+    box-shadow:
+      0 22px 60px rgba(0,0,0,.45),
+      0 0 35px rgba(83,246,255,.08),
+      0 0 55px rgba(176,108,255,.05);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:18px;
+  }
+
+  .media-box{
+    position:relative;
+    width:100%;
+    height:100%;
+    overflow:hidden;
+    border-radius:22px;
+    border:1px solid rgba(255,255,255,.10);
+    background:#01040d;
+  }
+
+  video, iframe, img{
+    width:100%;
+    height:100%;
+    display:block;
+    border:0;
+    background:#000;
+  }
+
+  video{
+    object-fit:contain;
+  }
+
+  img{
+    object-fit:contain;
+    background:#02050f;
+  }
+
+  iframe{
+    background:#fff;
+  }
+
+  .fade-in{
+    animation: sceneIn .45s ease;
+  }
+
+  @keyframes sceneIn{
+    from{
+      opacity:0;
+      transform: scale(.985) translateY(8px);
+      filter: blur(4px);
+    }
+    to{
+      opacity:1;
+      transform: scale(1) translateY(0);
+      filter: blur(0);
+    }
+  }
+
+  .sidebar{
+    min-height:0;
+    overflow:auto;
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+    padding:12px;
+    border-radius:24px;
+    border:1px solid rgba(255,255,255,.14);
+    background:
+      linear-gradient(180deg, rgba(9,16,42,.96), rgba(6,10,28,.94));
+    box-shadow:
+      0 22px 60px rgba(0,0,0,.45),
+      0 0 30px rgba(176,108,255,.06),
+      inset 0 0 20px rgba(255,255,255,.02);
+  }
+
+  .nav-btn{
+    position:relative;
+    width:100%;
+    min-height:50px;
+    padding:10px 12px;
+    border-radius:16px;
+    border:1px solid rgba(255,255,255,.14);
+    color:#fff;
+    font-size:15px;
+    font-weight:900;
+    line-height:1.15;
+    text-align:center;
+    cursor:pointer;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.04));
+    box-shadow:
+      inset 0 0 14px rgba(255,255,255,.02),
+      0 4px 18px rgba(0,0,0,.24);
+    transition:
+      transform .16s ease,
+      box-shadow .16s ease,
+      border-color .16s ease,
+      filter .16s ease,
+      background .16s ease;
+  }
+
+  .nav-btn:hover{
+    transform:translateY(-1px);
+    filter:brightness(1.08);
+  }
+
+  .nav-btn:active{
+    transform:translateY(0);
+  }
+
+  .nav-btn.start{
+    border-color:rgba(83,246,255,.42);
+    background:
+      linear-gradient(180deg, rgba(0,245,255,.90), rgba(0,255,162,.82));
+    box-shadow:
+      0 0 18px rgba(83,246,255,.22),
+      inset 0 0 18px rgba(255,255,255,.05);
+  }
+
+  .nav-btn.next{
+    border-color:rgba(255,215,106,.35);
+    background:
+      linear-gradient(180deg, rgba(255,215,106,.92), rgba(255,95,210,.78));
+    box-shadow:
+      0 0 18px rgba(255,215,106,.14),
+      inset 0 0 18px rgba(255,255,255,.03);
+  }
+
+  .nav-btn.std{
+    background:
+      linear-gradient(180deg, rgba(54,66,255,.95), rgba(159,82,255,.80));
+  }
+
+  .hero-card{
+    width:min(1000px, 100%);
+    min-height:min(68vh, 760px);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:20px;
+    padding:32px 30px;
+    text-align:center;
+    border-radius:32px;
+    border:1px solid rgba(255,255,255,.16);
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.03)),
+      radial-gradient(500px 240px at 50% 0%, rgba(83,246,255,.08), transparent 70%);
+    box-shadow:
+      inset 0 0 28px rgba(255,255,255,.03),
+      0 0 32px rgba(83,246,255,.08),
+      0 0 46px rgba(176,108,255,.05);
+  }
+
+  .hero-kicker{
+    font-size:14px;
+    letter-spacing:.24em;
+    text-transform:uppercase;
+    font-weight:900;
+    color:var(--gold);
+    text-shadow:
+      0 0 8px rgba(255,215,106,.7),
+      0 0 18px rgba(255,215,106,.35);
+  }
+
+  .hero-title{
+    margin:0;
+    font-size:clamp(34px, 5vw, 66px);
+    line-height:1.02;
+    font-weight:900;
+    background: linear-gradient(90deg, #ffffff, #8afcff 28%, #f4b6ff 58%, #ffe37d 84%, #ffffff);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+    text-shadow:0 0 28px rgba(83,246,255,.10);
+  }
+
+  .hero-text{
+    margin:0;
+    max-width:860px;
+    font-size:clamp(18px, 2vw, 26px);
+    line-height:1.45;
+    color:#eef5ff;
+  }
+
+  .hero-tip{
+    font-size:18px;
+    font-weight:900;
+    color:var(--mint);
+    text-shadow:0 0 14px rgba(127,255,224,.28);
+  }
+
+  .ticker{
+    position:absolute;
+    top:0;
+    left:0;
+    width:100%;
+    overflow:hidden;
+    pointer-events:none;
+    z-index:10;
+    padding-top:8px;
+  }
+
+  .ticker-text{
+    display:inline-block;
+    white-space:nowrap;
+    padding:10px 0;
+    font-size:28px;
+    font-weight:800;
+    letter-spacing:.02em;
+    background: linear-gradient(90deg, #53f6ff, #ff5fd2, #ffd76a, #53f6ff);
+    -webkit-background-clip:text;
+    background-clip:text;
+    color:transparent;
+    text-shadow:
+      0 0 10px rgba(83,246,255,.18),
+      0 0 16px rgba(255,95,210,.12);
+    animation: tickerMove 16s linear infinite;
+  }
+
+  @keyframes tickerMove{
+    0%   { transform: translateX(100%); }
+    100% { transform: translateX(-100%); }
+  }
+
+  @media (max-width: 980px){
+    .app{
+      grid-template-columns:1fr;
+      grid-template-rows:1fr auto;
+    }
+
+    .sidebar{
+      max-height:40vh;
+    }
+
+    .ticker-text{
+      font-size:20px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="stage" id="stage"></div>
+
+  <div class="sidebar">
+    <button class="nav-btn start" onclick="goTo('video1')">СТАРТ</button>
+    <button class="nav-btn next" onclick="goNext()">ДАЛЕЕ</button>
+
+    <button class="nav-btn std" onclick="goTo('soberi')">НАЙДИ ПРЕДЛОГ</button>
+    <button class="nav-btn std" onclick="goTo('video4')">НАВСТРЕЧУ</button>
+    <button class="nav-btn std" onclick="goTo('video6')">ВСЛЕД</button>
+    <button class="nav-btn std" onclick="goTo('video6')">ВМЕСТО</button>
+    <button class="nav-btn std" onclick="goTo('video7')">В ТЕЧЕНИЕ</button>
+    <button class="nav-btn std" onclick="goTo('video8')">В ПРОДОЛЖЕНИЕ</button>
+    <button class="nav-btn std" onclick="goTo('video9')">НА ПРОТЯЖЕНИИ</button>
+    <button class="nav-btn std" onclick="goTo('video5')">ВВИДУ</button>
+    <button class="nav-btn std" onclick="goTo('rocket')">СЛИТНО / РАЗДЕЛЬНО</button>
+    <button class="nav-btn std" onclick="goTo('vodopad')">Е / И</button>
+  </div>
+</div>
+
+<script>
+  const scenes = [
+    {
+      id: "start",
+      type: "start"
+    },
+    {
+      id:"video1",
+      type:"video",
+      src:"video1.mp4"
+    },
+    {
+      id:"soberi",
+      type:"iframe",
+      src:"soberi_predlogi.html"
+    },
+    {
+      id:"video2",
+      type:"videoTicker",
+      src:"video2.mp4",
+      text:"Платон нашел все предлоги в тексте, но гибрид чемодана и осьминога направил на корабль полчища космических лягушек"
+    },
+    {
+      id:"lagushki",
+      type:"iframe",
+      src:"lagushki.html"
+    },
+    {
+      id:"video3",
+      type:"video",
+      src:"video3.mp4"
+    },
+    {
+      id:"video4",
+      type:"video",
+      src:"video4.mp4"
+    },
+    {
+      id:"navstrechu1",
+      type:"image",
+      src:"navstrechu1.jpg"
+    },
+    {
+      id:"vitrazi",
+      type:"iframe",
+      src:"vitrazi.html"
+    },
+    {
+      id:"video5",
+      type:"video",
+      src:"video5.mp4"
+    },
+    {
+      id:"vvidu1",
+      type:"image",
+      src:"vvidu1.jpg"
+    },
+    {
+      id:"vvidu",
+      type:"iframe",
+      src:"vvidu.html"
+    },
+    {
+      id:"video6",
+      type:"video",
+      src:"video6.mp4"
+    },
+    {
+      id:"vmesto1",
+      type:"image",
+      src:"vmesto1.jpg"
+    },
+    {
+      id:"vmesto",
+      type:"iframe",
+      src:"vmesto.html"
+    },
+    {
+      id:"piroshki",
+      type:"iframe",
+      src:"piroshki.html"
+    },
+    {
+      id:"video7",
+      type:"video",
+      src:"video7.mp4"
+    },
+    {
+      id:"techenie",
+      type:"iframe",
+      src:"techenie.html"
+    },
+    {
+      id:"video8",
+      type:"video",
+      src:"video8.mp4"
+    },
+    {
+      id:"techenie1",
+      type:"image",
+      src:"techenie1.jpg"
+    },
+    {
+      id:"video9",
+      type:"video",
+      src:"video9.mp4"
+    },
+    {
+      id:"vodopad",
+      type:"iframe",
+      src:"vodopad.html"
+    },
+    {
+      id:"video10",
+      type:"video",
+      src:"video10.mp4"
+    },
+    {
+      id:"rocket",
+      type:"iframe",
+      src:"rocket.html"
+    }
+  ];
+
+  let currentIndex = 0;
+  let audioUnlocked = false;
+  let audioCtx = null;
+
+  function initAudio(){
+    if(!audioCtx){
+      try{
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }catch(e){
+        audioCtx = null;
+      }
+    }
+    if(audioCtx && audioCtx.state === "suspended"){
+      audioCtx.resume();
+    }
+    audioUnlocked = true;
+  }
+
+  function playTone(type = "soft"){
+    if(!audioCtx) return;
+
+    const now = audioCtx.currentTime;
+    const master = audioCtx.createGain();
+    master.gain.setValueAtTime(0.0001, now);
+    master.connect(audioCtx.destination);
+
+    if(type === "next"){
+      const o1 = audioCtx.createOscillator();
+      const g1 = audioCtx.createGain();
+      o1.type = "triangle";
+      o1.frequency.setValueAtTime(660, now);
+      o1.frequency.exponentialRampToValueAtTime(990, now + 0.09);
+      g1.gain.setValueAtTime(0.0001, now);
+      g1.gain.linearRampToValueAtTime(0.07, now + 0.015);
+      g1.gain.exponentialRampToValueAtTime(0.0001, now + 0.16);
+      o1.connect(g1).connect(master);
+      o1.start(now);
+      o1.stop(now + 0.18);
+    } else if(type === "start"){
+      const freqs = [440, 660, 880];
+      freqs.forEach((f, i) => {
+        const o = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        o.type = "sine";
+        o.frequency.setValueAtTime(f, now + i * 0.02);
+        g.gain.setValueAtTime(0.0001, now + i * 0.02);
+        g.gain.linearRampToValueAtTime(0.05, now + i * 0.02 + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, now + i * 0.02 + 0.24);
+        o.connect(g).connect(master);
+        o.start(now + i * 0.02);
+        o.stop(now + i * 0.02 + 0.26);
+      });
+    } else {
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.type = "sine";
+      o.frequency.setValueAtTime(520, now);
+      o.frequency.exponentialRampToValueAtTime(720, now + 0.06);
+      g.gain.setValueAtTime(0.0001, now);
+      g.gain.linearRampToValueAtTime(0.05, now + 0.015);
+      g.gain.exponentialRampToValueAtTime(0.0001, now + 0.13);
+      o.connect(g).connect(master);
+      o.start(now);
+      o.stop(now + 0.15);
+    }
+  }
+
+  function enableAudioOnce(){
+    if(!audioUnlocked){
+      initAudio();
+    }
+  }
+
+  ["pointerdown", "keydown", "touchstart"].forEach(evt => {
+    window.addEventListener(evt, enableAudioOnce, { once:true });
+  });
+
+  function renderStart(){
+    const stage = document.getElementById("stage");
+    stage.innerHTML = `
+      <div class="hero-card fade-in">
+        <div class="hero-kicker">ФИНАЛЬНЫЙ КВЕСТ</div>
+        <h1 class="hero-title">Космический Stand Up<br>с производными предлогами</h1>
+        <p class="hero-text">
+          Добро пожаловать в завершающий мини-сайт по теме производных предлогов.
+          Нажми кнопку <b>«СТАРТ»</b>, чтобы начать квест, или выбери нужный раздел справа.
+        </p>
+        <div class="hero-tip">Космическая грамматическая вечеринка начинается.</div>
+      </div>
+    `;
+  }
+
+  function setupVideoFreeze(video, keepLastFrame = false){
+    if(keepLastFrame) return;
+
+    video.addEventListener("ended", () => {
+      try{
+        video.currentTime = 0.01;
+        video.pause();
+      } catch(e){}
+    });
+  }
+
+  function renderVideo(scene){
+    const stage = document.getElementById("stage");
+    stage.innerHTML = `
+      <div class="media-box fade-in">
+        <video id="mainVideo" src="${scene.src}" autoplay controls playsinline preload="metadata"></video>
+      </div>
+    `;
+
+    const video = document.getElementById("mainVideo");
+    const keepLastFrame = scene.id === "video1";
+    setupVideoFreeze(video, keepLastFrame);
+  }
+
+  function renderVideoTicker(scene){
+    const stage = document.getElementById("stage");
+    stage.innerHTML = `
+      <div class="media-box fade-in">
+        <video id="mainVideo" src="${scene.src}" autoplay controls playsinline preload="metadata"></video>
+        <div class="ticker">
+          <div class="ticker-text">${scene.text}</div>
+        </div>
+      </div>
+    `;
+
+    const video = document.getElementById("mainVideo");
+    setupVideoFreeze(video, false);
+  }
+
+  function renderImage(scene){
+    const stage = document.getElementById("stage");
+    stage.innerHTML = `
+      <div class="media-box fade-in">
+        <img src="${scene.src}" alt="">
+      </div>
+    `;
+  }
+
+  function renderIframe(scene){
+    const stage = document.getElementById("stage");
+    stage.innerHTML = `
+      <div class="media-box fade-in">
+        <iframe src="${scene.src}" title="" loading="eager"></iframe>
+      </div>
+    `;
+  }
+
+  function renderCurrent(){
+    const scene = scenes[currentIndex];
+
+    if(scene.type === "start"){
+      renderStart();
+    } else if(scene.type === "video"){
+      renderVideo(scene);
+    } else if(scene.type === "videoTicker"){
+      renderVideoTicker(scene);
+    } else if(scene.type === "image"){
+      renderImage(scene);
+    } else if(scene.type === "iframe"){
+      renderIframe(scene);
+    }
+  }
+
+  function goTo(id){
+    const i = scenes.findIndex(s => s.id === id);
+    if(i !== -1){
+      currentIndex = i;
+      renderCurrent();
+      enableAudioOnce();
+      if(audioUnlocked){
+        if(id === "video1"){
+          playTone("start");
+        } else {
+          playTone("soft");
+        }
+      }
+    }
+  }
+
+  function goNext(){
+    enableAudioOnce();
+    if(audioUnlocked) playTone("next");
+
+    currentIndex++;
+    if(currentIndex >= scenes.length){
+      currentIndex = 0;
+    }
+    renderCurrent();
+  }
+
+  document.addEventListener("keydown", (e) => {
+    if(e.key === "ArrowRight"){
+      goNext();
+    }
+  });
+
+  renderCurrent();
+</script>
+</body>
+</html>
