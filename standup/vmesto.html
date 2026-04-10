@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Космическая путаница Платона на Плутоне</title>
+
+  <style>
+    * { box-sizing: border-box; }
+
+    body{
+      margin:0;
+      padding:0;
+      font-family: Arial, sans-serif;
+      background:
+        radial-gradient(circle at top, rgba(64,120,255,.18), transparent 28%),
+        radial-gradient(circle at 80% 20%, rgba(0,255,255,.08), transparent 18%),
+        radial-gradient(circle at 20% 80%, rgba(180,0,255,.10), transparent 20%),
+        linear-gradient(180deg, #031733 0%, #02112a 45%, #000814 100%);
+      color:#ffffff;
+      min-height:100vh;
+    }
+
+    .stars,
+    .stars:before,
+    .stars:after{
+      position:fixed;
+      inset:0;
+      content:"";
+      pointer-events:none;
+      background-repeat:repeat;
+      z-index:0;
+    }
+
+    .stars{
+      background-image:
+        radial-gradient(2px 2px at 20px 30px, rgba(255,255,255,.8), transparent 60%),
+        radial-gradient(1.5px 1.5px at 120px 80px, rgba(255,255,255,.75), transparent 60%),
+        radial-gradient(1.8px 1.8px at 200px 160px, rgba(173,216,255,.7), transparent 60%),
+        radial-gradient(1.6px 1.6px at 300px 40px, rgba(255,255,255,.7), transparent 60%);
+      background-size: 340px 220px;
+      opacity:.45;
+    }
+
+    .wrap{
+      position:relative;
+      z-index:1;
+      max-width: 1380px;
+      margin: 0 auto;
+      padding: 52px 42px 72px;
+    }
+
+    h1{
+      margin:0 0 28px 0;
+      font-size: 36px;
+      line-height: 1.2;
+      font-weight: 700;
+      text-shadow: 0 0 14px rgba(255,255,255,.08);
+    }
+
+    .panel{
+      background: linear-gradient(180deg, rgba(8,26,58,.72), rgba(2,12,30,.78));
+      border: 2px solid rgba(88,220,255,.45);
+      border-radius: 26px;
+      padding: 28px 28px 26px;
+      box-shadow:
+        0 0 0 1px rgba(255,255,255,.04) inset,
+        0 0 22px rgba(0,210,255,.14),
+        0 0 52px rgba(0,120,255,.08);
+      backdrop-filter: blur(3px);
+    }
+
+    .panel-title{
+      font-size: 18px;
+      color: #9fe9ff;
+      margin-bottom: 16px;
+      letter-spacing: .4px;
+      text-shadow: 0 0 10px rgba(96,223,255,.18);
+    }
+
+    #text{
+      font-size: 28px;
+      line-height: 1.8;
+      color: #f5f9ff;
+    }
+
+    .word{
+      cursor:pointer;
+      border-radius:10px;
+      padding: 2px 4px;
+      transition: all .18s ease;
+      display:inline-block;
+    }
+
+    .word:hover{
+      background: rgba(255,255,255,0.08);
+    }
+
+    .found{
+      color:#72ff9d;
+      font-weight:700;
+      text-shadow:
+        0 0 8px rgba(114,255,157,.38),
+        0 0 16px rgba(114,255,157,.18);
+    }
+
+    .wrong-click{
+      outline: 2px solid #ff5475;
+      background: rgba(255,84,117,.16);
+      color: #ffe0e7;
+      box-shadow: 0 0 12px rgba(255,84,117,.18);
+    }
+
+    .pulse-correct{
+      animation: pulseCorrect .45s ease;
+    }
+
+    @keyframes pulseCorrect{
+      0%   { transform: scale(1); }
+      50%  { transform: scale(1.14); }
+      100% { transform: scale(1); }
+    }
+
+    .stats{
+      margin-top: 24px;
+      font-size: 21px;
+      line-height: 1.8;
+      color:#d9ebff;
+    }
+
+    .stats span{
+      font-weight:700;
+      color:#ffffff;
+    }
+
+    #successMsg{
+      display:none;
+      margin-top: 16px;
+      font-size: 23px;
+      color:#98ffbe;
+      font-weight:700;
+      text-shadow: 0 0 12px rgba(143,255,179,.32);
+    }
+
+    #continueBtn{
+      display:none;
+      margin-top: 24px;
+      padding: 16px 34px;
+      border:none;
+      border-radius: 14px;
+      background: linear-gradient(180deg, #27e2ff, #02b8e6);
+      color:#01243d;
+      font-size: 19px;
+      font-weight:700;
+      cursor:pointer;
+      box-shadow:
+        0 0 18px rgba(25,215,255,.28),
+        0 0 34px rgba(25,215,255,.14);
+      transition: transform .15s ease, box-shadow .15s ease;
+    }
+
+    #continueBtn:hover{
+      transform: translateY(-1px);
+      box-shadow:
+        0 0 22px rgba(25,215,255,.34),
+        0 0 40px rgba(25,215,255,.18);
+    }
+
+    .hint{
+      margin-top: 16px;
+      font-size: 17px;
+      color: #a9c6ea;
+      opacity: .92;
+    }
+
+    @media (max-width: 900px){
+      .wrap{ padding: 28px 18px 44px; }
+      h1{ font-size: 30px; }
+      #text{ font-size: 22px; }
+      .panel{ padding: 20px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="stars"></div>
+
+  <div class="wrap">
+    <h1>Космическая путаница Платона на Плутоне</h1>
+
+    <div class="panel">
+      <div class="panel-title">Найди 3 ошибки. Нажимай только на неправильные формы.</div>
+
+      <div id="text">
+        Платон планировал высадиться на Альфе Центавра, но
+        <span class="word target" data-correct="вместо">в место</span>
+        этого его старый звездолет чихнул топливом и приземлился
+        <span class="word">в</span>
+        <span class="word">место</span>
+        <span class="word">скопления</span>
+        <span class="word">охлаждающих</span>
+        <span class="word">частиц</span>
+        <span class="word">на</span>
+        <span class="word">окраине</span>
+        <span class="word">системы.</span>
+
+        <span class="word">Вместо</span>
+        <span class="word">приветственных</span>
+        <span class="word">фанфар</span>
+        <span class="word">попугая-астронавта</span>
+        <span class="word">встретил</span>
+        <span class="word">пронизывающий</span>
+        <span class="word">ветер</span>
+        <span class="word">и</span>
+        <span class="word">местный</span>
+        <span class="word">пингвин-мутант.</span>
+
+        <span class="word">Грэм,</span>
+        <span class="word">который</span>
+        <span class="word">был</span>
+        <span class="word">штурманом,</span>
+        <span class="word">вместо</span>
+        <span class="word">извинений</span>
+        <span class="word">просто</span>
+        <span class="word">пожал</span>
+        <span class="word">плечами</span>
+        <span class="word">и</span>
+        <span class="word">предложил</span>
+        <span class="word">использовать</span>
+        <span class="word">магнитный</span>
+        <span class="word">сачок</span>
+        <span class="word target" data-correct="вместо">в место</span>
+        <span class="word">обогревателя.</span>
+
+        <span class="word">Платон</span>
+        <span class="word">посмотрел</span>
+        <span class="word">на</span>
+        <span class="word">него</span>
+        <span class="word">с</span>
+        <span class="word">сомнением,</span>
+        <span class="word">но,</span>
+        <span class="word">вместо</span>
+        <span class="word">того</span>
+        <span class="word">чтобы</span>
+        <span class="word">спорить,</span>
+        <span class="word">согласился.</span>
+
+        <span class="word">Однако</span>
+        <span class="word">сачок</span>
+        <span class="word">вместо</span>
+        <span class="word">тепла</span>
+        <span class="word">начал</span>
+        <span class="word">транслировать</span>
+        <span class="word">радиопередачи</span>
+        <span class="word">с</span>
+        <span class="word">Марса.</span>
+
+        <span class="word">—</span>
+        <span class="word">Ты</span>
+        <span class="word">прибыл</span>
+        <span class="word">не</span>
+        <span class="word">в</span>
+        <span class="word">место</span>
+        <span class="word">силы,</span>
+        <span class="word">землянин!</span>
+        <span class="word">—</span>
+        <span class="word">проскрипел</span>
+        <span class="word">пингвин.</span>
+        <span class="word">—</span>
+        <span class="word">Вместо</span>
+        <span class="word">того</span>
+        <span class="word">чтобы</span>
+        <span class="word">искать</span>
+        <span class="word">золото,</span>
+        <span class="word">лучше</span>
+        <span class="word">бы</span>
+        <span class="word">ты</span>
+        <span class="word">взял</span>
+        <span class="word">с</span>
+        <span class="word">собой</span>
+        <span class="word">лишний</span>
+        <span class="word">термос.</span>
+
+        <span class="word">Платон</span>
+        <span class="word">вздохнул</span>
+        <span class="word">и</span>
+        <span class="word">вместо</span>
+        <span class="word">ответа</span>
+        <span class="word">начал</span>
+        <span class="word">копать</span>
+        <span class="word">яму,</span>
+        <span class="word">чтобы</span>
+        <span class="word">спрятаться</span>
+        <span class="word">от</span>
+        <span class="word">ветра.</span>
+
+        <span class="word">Но</span>
+        <span class="word">вместо</span>
+        <span class="word">грунта</span>
+        <span class="word">лопата</span>
+        <span class="word">звякнула</span>
+        <span class="word">о</span>
+        <span class="word">металл.</span>
+
+        <span class="word">Оказалось,</span>
+        <span class="word">они</span>
+        <span class="word">попали</span>
+        <span class="word">в</span>
+        <span class="word">место</span>
+        <span class="word">хранения</span>
+        <span class="word">межгалактического</span>
+        <span class="word">мороженого!</span>
+
+        <span class="word">Вместо</span>
+        <span class="word">грусти</span>
+        <span class="word">на</span>
+        <span class="word">лицах</span>
+        <span class="word">героев</span>
+        <span class="word">расплылись</span>
+        <span class="word">улыбки.</span>
+
+        <span class="word">Теперь</span>
+        <span class="word">вместо</span>
+        <span class="word">скучного</span>
+        <span class="word">рациона</span>
+        <span class="word">из</span>
+        <span class="word">тюбиков</span>
+        <span class="word">у</span>
+        <span class="word">них</span>
+        <span class="word">был</span>
+        <span class="word">пломбир</span>
+        <span class="word">со</span>
+        <span class="word">вкусом</span>
+        <span class="word">кометы.</span>
+
+        <span class="word">Грэм</span>
+        <span class="word">решил,</span>
+        <span class="word">что</span>
+        <span class="word target" data-correct="вместо">в место</span>
+        <span class="word">возвращения</span>
+        <span class="word">домой</span>
+        <span class="word">они</span>
+        <span class="word">останутся</span>
+        <span class="word">здесь</span>
+        <span class="word">ещё</span>
+        <span class="word">на</span>
+        <span class="word">неделю</span>
+        <span class="word">—</span>
+        <span class="word">место</span>
+        <span class="word">это</span>
+        <span class="word">отдалённое,</span>
+        <span class="word">точно</span>
+        <span class="word">не</span>
+        <span class="word">заглянет</span>
+        <span class="word">начальство.</span>
+      </div>
+
+      <div class="stats">
+        Найдено ошибок: <span id="foundCount">0</span> / 3<br>
+        Промахов: <span id="missCount">0</span>
+      </div>
+
+      <div id="successMsg">Все 3 ошибки найдены! Зал аплодирует Платону 👏</div>
+      <button id="continueBtn">нажми ДАЛЕЕ на панели управления</button>
+
+    </div>
+  </div>
+
+  <audio id="finalApplause" preload="auto" src="applause.mp3"></audio>
+
+  <script>
+    let found = 0;
+    let misses = 0;
+    const totalTargets = 3;
+
+    const foundCount = document.getElementById('foundCount');
+    const missCount = document.getElementById('missCount');
+    const successMsg = document.getElementById('successMsg');
+    const continueBtn = document.getElementById('continueBtn');
+    const finalApplause = document.getElementById('finalApplause');
+
+    let audioCtx = null;
+    let finalPlayed = false;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    function tone(freq, start, duration, type = 'sine', volume = 0.08) {
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, start);
+
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(volume, start + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      osc.start(start);
+      osc.stop(start + duration + 0.02);
+    }
+
+    function noiseBurst(start, duration, volume = 0.05, band = 1200) {
+      const bufferSize = audioCtx.sampleRate * duration;
+      const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+      const data = buffer.getChannelData(0);
+
+      for (let i = 0; i < bufferSize; i++) {
+        data[i] = (Math.random() * 2 - 1) * (1 - i / bufferSize);
+      }
+
+      const source = audioCtx.createBufferSource();
+      const filter = audioCtx.createBiquadFilter();
+      const gain = audioCtx.createGain();
+
+      filter.type = 'bandpass';
+      filter.frequency.value = band;
+      filter.Q.value = 0.8;
+
+      gain.gain.setValueAtTime(volume, start);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+
+      source.buffer = buffer;
+      source.connect(filter);
+      filter.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      source.start(start);
+      source.stop(start + duration);
+    }
+
+    function playSuccessSound() {
+      initAudio();
+      const now = audioCtx.currentTime + 0.01;
+
+      tone(523.25, now, 0.12, 'triangle', 0.08);
+      tone(659.25, now + 0.10, 0.14, 'triangle', 0.08);
+      tone(783.99, now + 0.22, 0.18, 'triangle', 0.09);
+
+      tone(1046.5, now + 0.18, 0.26, 'sine', 0.035);
+      tone(1318.5, now + 0.24, 0.24, 'sine', 0.03);
+
+      for (let i = 0; i < 5; i++) {
+        noiseBurst(now + 0.34 + i * 0.06, 0.18, 0.012, 1400 + i * 220);
+      }
+    }
+
+    function playFailSound() {
+      initAudio();
+      const now = audioCtx.currentTime + 0.01;
+
+      tone(220, now, 0.12, 'sawtooth', 0.05);
+      tone(196, now + 0.08, 0.14, 'sawtooth', 0.05);
+      tone(174.61, now + 0.16, 0.18, 'sawtooth', 0.045);
+
+      noiseBurst(now + 0.02, 0.22, 0.01, 500);
+    }
+
+    function playFinalApplause() {
+      if (finalPlayed) return;
+      finalPlayed = true;
+
+      finalApplause.currentTime = 0;
+      finalApplause.play().catch(() => {});
+    }
+
+    function markWrongClick(el){
+      el.classList.add('wrong-click');
+      misses++;
+      missCount.textContent = misses;
+      playFailSound();
+
+      setTimeout(() => {
+        el.classList.remove('wrong-click');
+      }, 550);
+    }
+
+    function markFound(el){
+      if(el.dataset.done === '1') return;
+
+      el.textContent = el.dataset.correct;
+      el.dataset.done = '1';
+      el.classList.add('found', 'pulse-correct');
+      el.classList.remove('target');
+
+      found++;
+      foundCount.textContent = found;
+      playSuccessSound();
+
+      setTimeout(() => {
+        el.classList.remove('pulse-correct');
+      }, 500);
+
+      if(found === totalTargets){
+        successMsg.style.display = 'block';
+        continueBtn.style.display = 'inline-block';
+        playFinalApplause();
+      }
+    }
+
+    document.querySelectorAll('.word').forEach(word => {
+      word.addEventListener('click', () => {
+        initAudio();
+
+        if(word.classList.contains('target')){
+          markFound(word);
+        } else {
+          markWrongClick(word);
+        }
+      });
+    });
+
+    continueBtn.addEventListener('click', () => {
+      alert('Переход к следующему этапу квеста');
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Водопад Слов: Радуга</title>
+  <style>
+    /* Все стили без изменений */
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: #0b0f19;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      color: white;
+    }
+
+    #video-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: -2;
+    }
+
+    #bg-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.3);
+      z-index: -1;
+    }
+
+    canvas {
+      border: 2px solid rgba(58, 80, 107, 0.5);
+      border-radius: 12px;
+      box-shadow: 0 0 30px rgba(56, 189, 248, 0.3);
+      cursor: crosshair;
+      background: transparent;
+    }
+
+    #ui {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      pointer-events: none;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+      z-index: 10;
+    }
+    .stat {
+      display: inline-block;
+      margin: 0 12px;
+      font-size: 20px;
+      font-weight: bold;
+    }
+    .score { color: #4ade80; }
+    .mistakes { color: #f87171; }
+    .progress { color: #fbbf24; }
+    #hint {
+      margin-top: 8px;
+      font-size: 14px;
+      opacity: 0.7;
+      animation: fadeOut 4s forwards;
+    }
+    @keyframes fadeOut {
+      0%, 80% { opacity: 0.7; }
+      100% { opacity: 0; }
+    }
+
+    #start-btn, #restart-btn, #review-btn {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 15px 40px;
+      font-size: 20px;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.4);
+      z-index: 20;
+      transition: transform 0.2s;
+    }
+    #start-btn { top: 50%; transform: translate(-50%, -50%); }
+    #restart-btn { 
+      top: 55%; 
+      transform: translate(-50%, -50%);
+      background: linear-gradient(135deg, #10b981, #3b82f6);
+      display: none;
+    }
+    #review-btn {
+      top: 65%;
+      background: linear-gradient(135deg, #f59e0b, #ef4444);
+      display: none;
+    }
+    #start-btn:hover, #restart-btn:hover, #review-btn:hover {
+      transform: translateX(-50%) scale(1.05);
+    }
+
+    #speed-control {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.6);
+      padding: 15px 25px;
+      border-radius: 10px;
+      backdrop-filter: blur(5px);
+      border: 1px solid rgba(150, 200, 255, 0.3);
+      z-index: 10;
+      display: none;
+    }
+    #speed-control.show { display: block; }
+    .speed-label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+      color: #a0d0ff;
+      text-align: center;
+    }
+    #speed-slider {
+      width: 300px;
+      height: 6px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: rgba(100, 150, 255, 0.3);
+      border-radius: 3px;
+      outline: none;
+    }
+    #speed-slider::-webkit-slider-thumb,
+    #speed-slider::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      border-radius: 50%;
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+    }
+    #speed-value {
+      display: inline-block;
+      margin-left: 10px;
+      color: #4ade80;
+      font-weight: bold;
+    }
+
+    #practice-progress {
+      position: absolute;
+      top: 60px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(245, 158, 11, 0.2);
+      padding: 8px 20px;
+      border-radius: 20px;
+      border: 1px solid #f59e0b;
+      font-size: 16px;
+      color: #fbbf24;
+      display: none;
+      z-index: 15;
+    }
+    #practice-progress.show { display: block; }
+
+    #practice-complete {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(16, 185, 129, 0.95);
+      padding: 25px 45px;
+      border-radius: 20px;
+      text-align: center;
+      font-size: 26px;
+      font-weight: bold;
+      color: white;
+      box-shadow: 0 0 50px rgba(16, 185, 129, 0.7);
+      display: none;
+      z-index: 25;
+      animation: popIn 0.4s ease;
+      pointer-events: none;
+    }
+    @keyframes popIn {
+      0% { transform: translate(-50%, -50%) scale(0.7); opacity: 0; }
+      100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+    }
+
+    #review-screen {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(11, 15, 25, 0.95);
+      display: none;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 30;
+      padding: 20px;
+      box-sizing: border-box;
+      overflow-y: auto;
+    }
+    #review-screen.show { display: flex; }
+    .review-title {
+      font-size: 32px;
+      font-weight: bold;
+      margin-bottom: 20px;
+      color: #f59e0b;
+      text-align: center;
+    }
+    .review-list {
+      max-width: 700px;
+      width: 100%;
+      max-height: 60vh;
+      overflow-y: auto;
+      margin-bottom: 20px;
+    }
+    .review-item {
+      background: rgba(30, 41, 59, 0.8);
+      border-left: 4px solid #f87171;
+      padding: 12px 16px;
+      margin: 8px 0;
+      border-radius: 0 8px 8px 0;
+      font-size: 18px;
+    }
+    .review-item.correct {
+      border-left-color: #4ade80;
+    }
+    .review-answer {
+      display: block;
+      margin-top: 4px;
+      font-size: 16px;
+      color: #a0d0ff;
+    }
+    .review-hint {
+      font-size: 14px;
+      color: #94a3b8;
+      margin-top: 2px;
+      font-style: italic;
+    }
+    #back-to-game {
+      padding: 12px 30px;
+      font-size: 18px;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      border: none;
+      border-radius: 8px;
+      color: white;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Добавлен элемент аудио для аплодисментов -->
+  <audio id="applause-sound" src="applause.mp3" preload="auto"></audio>
+  
+  <video id="video-bg" autoplay loop muted playsinline>
+    <source src="background.mp4" type="video/mp4">
+  </video>
+  <div id="bg-overlay"></div>
+
+  <div id="ui">
+    <div>
+      <span class="stat">⭐ <span id="score" class="score">0</span></span>
+      <span class="stat">❌ <span id="mistakes" class="mistakes">0</span></span>
+      <span class="stat">📚 <span id="progress" class="progress">0/20</span></span>
+    </div>
+    <div id="hint">Наводите мышь, чтобы наклонять жёлоб к сосудам Е или И</div>
+  </div>
+  
+  <div id="practice-progress">🎯 Осталось усвоить: <span id="remaining-count">0</span></div>
+  <div id="practice-complete">🎉 Все ошибки исправлены!<br><span style="font-size:20px;font-weight:normal;margin-top:8px;display:block">Молодец! ✨</span></div>
+  
+  <button id="start-btn">▶ Начать игру</button>
+  <button id="restart-btn">🔄 Играть сначала</button>
+  <button id="review-btn">📚 Работа над ошибками</button>
+  
+  <div id="speed-control">
+    <span class="speed-label">⚡ Скорость: <span id="speed-value">1.0</span>x</span>
+    <input type="range" id="speed-slider" min="0" max="3" step="0.1" value="1">
+  </div>
+  
+  <canvas id="game"></canvas>
+
+  <div id="review-screen">
+    <div class="review-title">✨ Список ошибок</div>
+    <div class="review-list" id="review-list"></div>
+    <button id="back-to-game">🔙 Вернуться в меню</button>
+  </div>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+canvas.width = 800;
+canvas.height = 600;
+
+const neonColors = [
+  "#00FFFF", "#FFB6C1", "#FFE5A3", "#98FB98", 
+  "#00BFFF", "#FFB347", "#DDA0DD"
+];
+
+let audioContext = null;
+
+function initAudio() {
+  if (!audioContext) {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  }
+}
+
+function playCorrectSound() {
+  if (!audioContext) return;
+  const now = audioContext.currentTime;
+  const frequencies = [523.25, 659.25, 783.99];
+  frequencies.forEach((freq, index) => {
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    oscillator.frequency.value = freq;
+    oscillator.type = 'sine';
+    const startTime = now + index * 0.05;
+    gainNode.gain.setValueAtTime(0, startTime);
+    gainNode.gain.linearRampToValueAtTime(0.15, startTime + 0.05);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.4);
+    oscillator.start(startTime);
+    oscillator.stop(startTime + 0.5);
+  });
+}
+
+function playWrongSound() {
+  if (!audioContext) return;
+  const now = audioContext.currentTime;
+  const oscillator1 = audioContext.createOscillator();
+  const oscillator2 = audioContext.createOscillator();
+  const gainNode = audioContext.createGain();
+  oscillator1.connect(gainNode);
+  oscillator2.connect(gainNode);
+  gainNode.connect(audioContext.destination);
+  oscillator1.type = 'sawtooth';
+  oscillator1.frequency.setValueAtTime(180, now);
+  oscillator1.frequency.exponentialRampToValueAtTime(80, now + 0.3);
+  oscillator2.type = 'square';
+  oscillator2.frequency.setValueAtTime(180, now);
+  oscillator2.frequency.exponentialRampToValueAtTime(80, now + 0.3);
+  gainNode.gain.setValueAtTime(0, now);
+  gainNode.gain.linearRampToValueAtTime(0.25, now + 0.05);
+  gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+  oscillator1.start(now);
+  oscillator2.start(now);
+  oscillator1.stop(now + 0.4);
+  oscillator2.stop(now + 0.4);
+}
+
+// === СИСТЕМА СЛОВ ===
+let availableWords = [];       // Слова для основной игры (без повторов в сессии)
+let mistakePool = [];          // 🔴 ТОЛЬКО слова, где были ошибки
+let masteredKeys = new Set();  // ✅ Ключи слов, усвоенных в тренировке
+let wordsShownThisSession = new Set();
+
+const TOTAL_WORDS = 20;
+
+const wordExplanations = {
+  "преддверии": "«В преддверии» — производный предлог, пишется с И",
+  "продолжении": "«В продолжении» (времени) — производный предлог, пишется с Е",
+  "протяжении": "«На протяжении» — производный предлог, пишется с И",
+  "заключении": "«В заключении» (документа) — существительное с предлогом, пишется с Е",
+  "отсутствии": "«При отсутствии» — производный предлог, пишется с И",
+  "мере": "«По мере» — производный предлог, пишется с Е",
+  "отличии": "«В отличие» — производный предлог, пишется с Е",
+  "основании": "«На основании» — производный предлог, пишется с И",
+  "избежании": "«Во избежание» — производный предлог, пишется с Е",
+  "причине": "«По причине» — производный предлог, пишется с Е",
+  "завершении": "«В завершении» (мероприятия) — существительное с предлогом, пишется с Е",
+  "согласии": "«В согласии» — существительное с предлогом, пишется с И",
+  "соответствии": "«В соответствии» — производный предлог, пишется с И",
+  "течении": "«В течение» (времени) — производный предлог, пишется с Е",
+  "виде": "«В виде» — производный предлог, пишется с Е",
+  "наподобии": "«Наподобие» — производный предлог, пишется с Е",
+  "условии": "«При условии» — производный предлог, пишется с И",
+  "вследствии": "«Вследствие» — производный предлог, пишется с Е"
+};
+
+let score = 0;
+let mistakes = 0;
+let isPlaying = false;
+let isPracticeMode = false;
+let mouseX = canvas.width / 2;
+let word = null;
+let wordY = 50;
+let wordSpawnX = 100;
+let baseWordSpeed = 2.5;
+let speedMultiplier = 1.0;
+let particles = [];
+let feedback = { text: "", color: "", timer: 0 };
+
+const words = [
+  { text: "В  ПРЕДДВЕРИ_  праздника ", correct: "и", key: "преддверии" },
+  { text: "В ПРОДОЛЖЕНИ_  часа", correct: "е", key: "продолжении" },
+  { text: "НА ПРОТЯЖЕНИ_  веков ", correct: "и", key: "протяжении" },
+  { text: "В ЗАКЛЮЧЕНИ_  выступления", correct: "е", key: "заключении" },
+  { text: "ПРИ ОТСУТСТВИ_  улик", correct: "и", key: "отсутствии" },
+  { text: "ПО МЕР_  приближения", correct: "е", key: "мере" },
+  { text: "В  ОТЛИЧИ_  от брата", correct: "е", key: "отличии" },
+  { text: "НА  ОСНОВАНИ_  решения", correct: "и", key: "основании" },
+  { text: "ВО  ИЗБЕЖАНИ_  недоразумений", correct: "е", key: "избежании" },
+  { text: "НА  ПРОТЯЖЕНИ_  пути", correct: "и", key: "протяжении" },
+  { text: "ПО  ПРИЧИН_  совпадения", correct: "е", key: "причине" },
+  { text: "В ЗАВЕРШЕНИ_  периода", correct: "е", key: "завершении" },
+  { text: "В СОГЛАСИ_ с планом", correct: "и", key: "согласии" },
+  { text: "В СООТВЕТСТВИ_  с договором", correct: "и", key: "соответствии" },
+  { text: "В  ТЕЧЕНИ_ курса", correct: "е", key: "течении" },
+  { text: "В  ПРОДОЛЖЕНИ_  урока", correct: "е", key: "продолжении" },
+  { text: "В  ВИД_  облака", correct: "е", key: "виде" },
+  { text: "НАПОДОБИ_  озера", correct: "е", key: "наподобии" },
+  { text: "НА ПРОТЯЖЕНИ_ сессии", correct: "и", key: "протяжении" },
+  { text: "ПРИ  УСЛОВИ_  поддержки", correct: "и", key: "условии" },
+  { text: "ВСЛЕДСТВИ_ засухи", correct: "е", key: "вследствии" }
+];
+
+const validWords = words.filter(w => w.correct === 'е' || w.correct === 'и');
+
+function shuffleArray(array) {
+  const arr = [...array];
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function initAvailableWords() {
+  availableWords = shuffleArray(validWords);
+}
+
+function updatePracticeProgress() {
+  const remaining = mistakePool.filter(w => !masteredKeys.has(w.key)).length;
+  document.getElementById('remaining-count').textContent = remaining;
+  
+  const completeScreen = document.getElementById('practice-complete');
+  if (remaining === 0 && isPracticeMode) {
+    completeScreen.style.display = 'block';
+    document.getElementById('applause-sound').play(); // Воспроизводим аплодисменты
+    setTimeout(() => {
+      completeScreen.style.display = 'none';
+      exitPracticeMode();
+    }, 2500);
+  }
+}
+
+function updateProgressDisplay() {
+  document.getElementById('progress').textContent = `${wordsShownThisSession.size}/${TOTAL_WORDS}`;
+}
+
+const startBtn = document.getElementById('start-btn');
+const restartBtn = document.getElementById('restart-btn');
+const reviewBtn = document.getElementById('review-btn');
+const speedControl = document.getElementById('speed-control');
+const speedSlider = document.getElementById('speed-slider');
+const speedValue = document.getElementById('speed-value');
+const reviewScreen = document.getElementById('review-screen');
+const reviewList = document.getElementById('review-list');
+const backToGameBtn = document.getElementById('back-to-game');
+const practiceProgress = document.getElementById('practice-progress');
+
+speedSlider.addEventListener('input', (e) => {
+  speedMultiplier = parseFloat(e.target.value);
+  speedValue.textContent = speedMultiplier === 0 ? '0 (пауза)' : speedMultiplier.toFixed(1);
+});
+
+// === ЗАПУСК ОСНОВНОЙ ИГРЫ ===
+startBtn.addEventListener('click', () => {
+  initAudio();
+  exitPracticeMode();
+  initAvailableWords();
+  mistakePool = []; // Очищаем ошибки
+  masteredKeys.clear();
+  wordsShownThisSession.clear();
+  startBtn.style.display = 'none';
+  reviewBtn.style.display = 'none';
+  reviewScreen.classList.remove('show');
+  resetAndStart();
+});
+
+restartBtn.addEventListener('click', () => {
+  exitPracticeMode();
+  initAvailableWords();
+  mistakePool = [];
+  masteredKeys.clear();
+  wordsShownThisSession.clear();
+  restartBtn.style.display = 'none';
+  reviewBtn.style.display = 'none';
+  reviewScreen.classList.remove('show');
+  resetAndStart();
+});
+
+// === ЗАПУСК ТРЕНИРОВКИ ===
+reviewBtn.addEventListener('click', () => {
+  initAudio();
+  enterPracticeMode();
+});
+
+backToGameBtn.addEventListener('click', () => {
+  reviewScreen.classList.remove('show');
+  restartBtn.style.display = 'block';
+  reviewBtn.style.display = 'block';
+});
+
+function enterPracticeMode() {
+  isPracticeMode = true;
+  reviewBtn.style.display = 'none';
+  restartBtn.style.display = 'none';
+  practiceProgress.classList.add('show');
+  
+  // ✅ УБРАНО: initMistakePool() больше не перезаполняет пул всеми словами!
+  updatePracticeProgress();
+
+  const unmastered = mistakePool.filter(w => !masteredKeys.has(w.key));
+  if (unmastered.length === 0) {
+    alert('🎉 Отлично! Все ошибки уже усвоены!');
+    exitPracticeMode();
+    return;
+  }
+  
+  score = 0;
+  mistakes = 0;
+  document.getElementById('score').textContent = score;
+  document.getElementById('mistakes').textContent = mistakes;
+  
+  speedControl.classList.add('show');
+  isPlaying = true;
+  spawnWord();
+  requestAnimationFrame(loop);
+}
+
+function exitPracticeMode() {
+  isPracticeMode = false;
+  practiceProgress.classList.remove('show');
+}
+
+function resetAndStart() {
+  score = 0;
+  mistakes = 0;
+  document.getElementById('score').textContent = score;
+  document.getElementById('mistakes').textContent = mistakes;
+  updateProgressDisplay();
+  speedControl.classList.add('show');
+  isPlaying = true;
+  spawnWord();
+  requestAnimationFrame(loop);
+}
+
+canvas.addEventListener('mousemove', e => {
+  const rect = canvas.getBoundingClientRect();
+  mouseX = e.clientX - rect.left;
+  mouseX = Math.max(100, Math.min(700, mouseX));
+});
+
+function spawnWord() {
+  if (isPracticeMode) {
+    const unmastered = mistakePool.filter(w => !masteredKeys.has(w.key));
+    if (unmastered.length === 0) {
+      isPlaying = false;
+      updatePracticeProgress();
+      return;
+    }
+    word = unmastered[Math.floor(Math.random() * unmastered.length)];
+  } else {
+    if (availableWords.length === 0) {
+      endMainGame();
+      return;
+    }
+    word = availableWords.pop();
+    wordsShownThisSession.add(word.key);
+    updateProgressDisplay();
+  }
+  
+  wordSpawnX = Math.random() < 0.5 ? 80 : 720; 
+  wordY = 50;
+  baseWordSpeed = 2.5 + (score / 20);
+  word.color = neonColors[Math.floor(Math.random() * neonColors.length)];
+}
+
+function endMainGame() {
+  isPlaying = false;
+  ctx.fillStyle = 'rgba(0,0,0,0.85)';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  
+  ctx.font = "bold 40px 'Segoe UI', sans-serif";
+  ctx.fillStyle = "#ffffff";
+  ctx.textAlign = "center";
+  ctx.fillText("🎉 Сессия завершена!", canvas.width/2, canvas.height/2 - 40);
+  
+  ctx.font = "28px sans-serif";
+  ctx.fillStyle = "#4ade80";
+  ctx.fillText(`Результат: ${score} из ${TOTAL_WORDS}`, canvas.width/2, canvas.height/2 + 10);
+  
+  ctx.fillStyle = "#a0d0ff";
+  ctx.font = "20px sans-serif";
+  ctx.fillText("Нажми «Тренировка ошибок» для закрепления", canvas.width/2, canvas.height/2 + 50);
+  
+  // Аплодисменты НЕ звучат здесь — только в тренировке ошибок
+  restartBtn.style.display = 'block';
+  reviewBtn.style.display = 'block';
+}
+
+function getPointOnLine(t, x1, y1, x2, y2) {
+  return { x: x1 + (x2 - x1) * t, y: y1 + (y2 - y1) * t };
+}
+
+function update() {
+  if (!isPlaying) return;
+
+  if (Math.random() < 0.25) {
+    const endX = Math.max(100, Math.min(700, mouseX));
+    particles.push({
+      t: 0,
+      speed: 0.006 + Math.random() * 0.006,
+      size: 2 + Math.random() * 4,
+      alpha: 0.4 + Math.random() * 0.5,
+      hue: 190 + Math.random() * 70,
+      drift: (Math.random() - 0.5) * 2
+    });
+  }
+
+  for (let i = particles.length - 1; i >= 0; i--) {
+    particles[i].t += particles[i].speed;
+    if (particles[i].t > 1) particles.splice(i, 1);
+  }
+
+  if (word) {
+    if (speedMultiplier > 0) {
+      const currentSpeed = baseWordSpeed * speedMultiplier;
+      wordY += currentSpeed;
+    }
+    
+    if (wordY >= 510) {
+      const endX = Math.max(100, Math.min(700, mouseX));
+      const t = (wordY - 50) / (550 - 50);
+      const wordPos = getPointOnLine(t, wordSpawnX, 50, endX, 550);
+      
+      const chosen = wordPos.x < 400 ? 'е' : 'и';
+      const isCorrect = (chosen === word.correct);
+      
+      if (isCorrect) {
+        score += 1;
+        feedback = { text: "Верно! +1", color: "#4ade80", timer: 40 };
+        playCorrectSound();
+        
+        if (isPracticeMode) {
+          masteredKeys.add(word.key); // ✅ Слово усвоено, больше не появится
+          updatePracticeProgress();
+        }
+      } else {
+        mistakes++;
+        feedback = { text: "Ошибка!", color: "#f87171", timer: 40 };
+        playWrongSound();
+        
+        if (!isPracticeMode) {
+          if (!mistakePool.find(w => w.key === word.key)) {
+            mistakePool.push(word); // 🔴 Только ошибки попадают в пул
+          }
+        }
+      }
+      
+      document.getElementById('score').textContent = score;
+      document.getElementById('mistakes').textContent = mistakes;
+      spawnWord();
+    }
+  }
+
+  if (feedback.timer > 0) feedback.timer--;
+}
+
+function drawNeonOval(x, y, text, color) {
+  ctx.font = "bold 24px 'Segoe UI', sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  
+  const textMetrics = ctx.measureText(text + "_");
+  const textWidth = textMetrics.width;
+  const textHeight = 24;
+  
+  const padding = 20;
+  const ovalWidth = textWidth + padding * 2;
+  const ovalHeight = textHeight + padding * 1.5;
+  const radiusY = ovalHeight / 2;
+  const radiusX = ovalWidth / 2;
+  
+  ctx.save();
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 20;
+  
+  ctx.beginPath();
+  ctx.ellipse(x, y, radiusX, radiusY, 0, 0, Math.PI * 2);
+  ctx.fillStyle = "rgba(10, 10, 25, 0.75)";
+  ctx.fill();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2.5;
+  ctx.stroke();
+  
+  ctx.shadowBlur = 25;
+  ctx.strokeStyle = color;
+  ctx.globalAlpha = 0.3;
+  ctx.lineWidth = 6;
+  ctx.stroke();
+  
+  ctx.restore();
+  
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 8;
+  ctx.fillStyle = "#ffffff";
+  ctx.fillText(text + "_", x, y);
+  ctx.shadowBlur = 0;
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  const endX = Math.max(100, Math.min(700, mouseX));
+  const endY = 550;
+
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  
+  ctx.beginPath();
+  ctx.moveTo(wordSpawnX, 50);
+  ctx.lineTo(endX, endY);
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+  ctx.lineWidth = 30;
+  ctx.stroke();
+
+  ctx.beginPath();
+  ctx.moveTo(wordSpawnX, 50);
+  ctx.lineTo(endX, endY);
+  ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+  ctx.lineWidth = 4;
+  ctx.stroke();
+
+  const angle = Math.atan2(endY - 50, endX - wordSpawnX);
+  const perpX = -Math.sin(angle);
+  const perpY = Math.cos(angle);
+  const wallOffset = 16;
+
+  ctx.beginPath();
+  ctx.moveTo(wordSpawnX + perpX * wallOffset, 50 + perpY * wallOffset);
+  ctx.lineTo(endX + perpX * wallOffset, endY + perpY * wallOffset);
+  ctx.moveTo(wordSpawnX - perpX * wallOffset, 50 - perpY * wallOffset);
+  ctx.lineTo(endX - perpX * wallOffset, endY - perpY * wallOffset);
+  ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  particles.forEach(p => {
+    const pos = getPointOnLine(p.t, wordSpawnX, 50, endX, endY);
+    const driftX = perpX * p.drift * (1 - Math.abs(p.t - 0.5) * 2);
+    const driftY = perpY * p.drift * (1 - Math.abs(p.t - 0.5) * 2);
+    
+    ctx.beginPath();
+    ctx.arc(pos.x + driftX, pos.y + driftY, p.size, 0, Math.PI * 2);
+    ctx.fillStyle = `hsla(${p.hue}, 80%, 70%, ${p.alpha})`;
+    ctx.fill();
+  });
+
+  drawContainer(150, 520, "Е", "#3b82f6");
+  drawContainer(650, 520, "И", "#8b5cf6");
+
+  if (word) {
+    const t = Math.min(1, (wordY - 50) / (endY - 50));
+    const pos = getPointOnLine(t, wordSpawnX, 50, endX, endY);
+    drawNeonOval(pos.x, pos.y, word.text, word.color);
+  }
+
+  if (feedback.timer > 0) {
+    ctx.globalAlpha = feedback.timer / 40;
+    ctx.font = "bold 32px sans-serif";
+    ctx.fillStyle = feedback.color;
+    ctx.textAlign = "center";
+    ctx.fillText(feedback.text, canvas.width/2, canvas.height/2 - 60);
+    ctx.globalAlpha = 1;
+  }
+}
+
+function drawContainer(x, y, letter, color) {
+  ctx.save();
+  ctx.fillStyle = color;
+  ctx.globalAlpha = 0.25;
+  ctx.fillRect(x - 45, y, 90, 80);
+  ctx.globalAlpha = 1;
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 3;
+  ctx.strokeRect(x - 45, y, 90, 80);
+  
+  ctx.font = "bold 42px sans-serif";
+  ctx.fillStyle = color;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(letter, x, y + 40);
+  ctx.restore();
+}
+
+function loop() {
+  update();
+  draw();
+  if (isPlaying) requestAnimationFrame(loop);
+}
+
+draw();
+</script>
+</body>
+</html>
